@@ -10,6 +10,8 @@ class Category(enum.Enum):
     EOF = enum.auto()
     NEWLINE = enum.auto()
 
+    LEFT_PAREN = enum.auto()
+    RIGHT_PAREN = enum.auto()
     STAR = enum.auto()
     SLASH = enum.auto()
     PLUS = enum.auto()
@@ -45,6 +47,12 @@ class Tokenizer:
             elif self._source[self._source_index].isdigit():
                 self._produced_tokens.append(self._consume_integer())
 
+            elif self._source[self._source_index] == "(":
+                self._produced_tokens.append(self._consume_left_paren())
+
+            elif self._source[self._source_index] == ")":
+                self._produced_tokens.append(self._consume_right_paren())
+
             elif self._source[self._source_index] == "*":
                 self._produced_tokens.append(self._consume_star())
 
@@ -78,6 +86,18 @@ class Tokenizer:
 
     def _consume_newline(self):
         token = Token(self._line, self._column, Category.NEWLINE, "\n")
+        self._advance()
+
+        return token
+
+    def _consume_left_paren(self):
+        token = Token(self._line, self._column, Category.LEFT_PAREN, "(")
+        self._advance()
+
+        return token
+
+    def _consume_right_paren(self):
+        token = Token(self._line, self._column, Category.RIGHT_PAREN, ")")
         self._advance()
 
         return token

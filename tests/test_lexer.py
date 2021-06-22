@@ -9,6 +9,22 @@ def test_tokenizer_produces_integer():
     assert tokens == [lex.Token(1, 3, lex.Category.INTEGER, "123")]
 
 
+def test_tokenizer_produces_left_paren():
+    source = "  (  "
+    tokenizer = lex.Tokenizer(source)
+    tokens = tokenizer.tokenize()
+
+    assert tokens == [lex.Token(1, 3, lex.Category.LEFT_PAREN, "(")]
+
+
+def test_tokenizer_produces_right_paren():
+    source = "  )  "
+    tokenizer = lex.Tokenizer(source)
+    tokens = tokenizer.tokenize()
+
+    assert tokens == [lex.Token(1, 3, lex.Category.RIGHT_PAREN, ")")]
+
+
 def test_tokenizer_produces_star():
     source = "  *  "
     tokenizer = lex.Tokenizer(source)
@@ -57,7 +73,7 @@ def test_tokenizer_produces_newline():
     assert tokens == [lex.Token(1, 3, lex.Category.NEWLINE, "\n")]
 
 
-def test_tokenizer_produces_token_afte_a_newline():
+def test_tokenizer_produces_token_after_a_newline():
     source = "  \n123"
     tokenizer = lex.Tokenizer(source)
     tokens = tokenizer.tokenize()
