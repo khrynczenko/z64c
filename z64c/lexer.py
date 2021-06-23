@@ -18,7 +18,7 @@ class Category(enum.Enum):
     MINUS = enum.auto()
     EQUAL = enum.auto()
 
-    INTEGER = enum.auto()
+    UNSIGNEDINT = enum.auto()
 
 
 @dataclasses.dataclass
@@ -139,7 +139,7 @@ class Tokenizer:
             )
         )
 
-        token = Token(self._line, self._column, Category.INTEGER, integer)
+        token = Token(self._line, self._column, Category.UNSIGNEDINT, integer)
 
         self._column += len(integer)
         self._source_index += len(integer)

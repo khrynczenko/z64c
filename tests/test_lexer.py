@@ -1,12 +1,12 @@
 from z64c import lexer as lex
 
 
-def test_tokenizer_produces_integer():
+def test_tokenizer_produces_unsignedint():
     source = "  123  "
     tokenizer = lex.Tokenizer(source)
     tokens = tokenizer.tokenize()
 
-    assert tokens == [lex.Token(1, 3, lex.Category.INTEGER, "123")]
+    assert tokens == [lex.Token(1, 3, lex.Category.UNSIGNEDINT, "123")]
 
 
 def test_tokenizer_produces_left_paren():
@@ -80,7 +80,7 @@ def test_tokenizer_produces_token_after_a_newline():
 
     assert tokens == [
         lex.Token(1, 3, lex.Category.NEWLINE, "\n"),
-        lex.Token(2, 1, lex.Category.INTEGER, "123"),
+        lex.Token(2, 1, lex.Category.UNSIGNEDINT, "123"),
     ]
 
 
@@ -90,7 +90,7 @@ def test_tokenizer_produces_binary_addition():
     tokens = tokenizer.tokenize()
 
     assert tokens == [
-        lex.Token(1, 3, lex.Category.INTEGER, "12"),
+        lex.Token(1, 3, lex.Category.UNSIGNEDINT, "12"),
         lex.Token(1, 6, lex.Category.PLUS, "+"),
-        lex.Token(1, 8, lex.Category.INTEGER, "34"),
+        lex.Token(1, 8, lex.Category.UNSIGNEDINT, "34"),
     ]
