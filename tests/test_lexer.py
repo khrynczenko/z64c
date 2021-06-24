@@ -1,12 +1,23 @@
 from z64c import lexer as lex
 
 
-def test_tokenizer_produces_unsignedint():
-    source = "  123  "
+def test_tokenizer_produces_newline():
+    source = "  \n  "
     tokenizer = lex.Tokenizer(source)
     tokens = tokenizer.tokenize()
 
-    assert tokens == [lex.Token(1, 3, lex.Category.UNSIGNEDINT, "123")]
+    assert tokens == [lex.Token(1, 3, lex.Category.NEWLINE, "\n")]
+
+
+def test_tokenizer_produces_token_after_a_newline():
+    source = "  \n123"
+    tokenizer = lex.Tokenizer(source)
+    tokens = tokenizer.tokenize()
+
+    assert tokens == [
+        lex.Token(1, 3, lex.Category.NEWLINE, "\n"),
+        lex.Token(2, 1, lex.Category.UNSIGNEDINT, "123"),
+    ]
 
 
 def test_tokenizer_produces_left_paren():
@@ -65,23 +76,20 @@ def test_tokenizer_produces_equal():
     assert tokens == [lex.Token(1, 3, lex.Category.EQUAL, "=")]
 
 
-def test_tokenizer_produces_newline():
-    source = "  \n  "
+def test_tokenizer_produces_unsignedint():
+    source = "  123  "
     tokenizer = lex.Tokenizer(source)
     tokens = tokenizer.tokenize()
 
-    assert tokens == [lex.Token(1, 3, lex.Category.NEWLINE, "\n")]
+    assert tokens == [lex.Token(1, 3, lex.Category.UNSIGNEDINT, "123")]
 
 
-def test_tokenizer_produces_token_after_a_newline():
-    source = "  \n123"
+def test_tokenizer_produces_identifier():
+    source = "  _identifier_  "
     tokenizer = lex.Tokenizer(source)
     tokens = tokenizer.tokenize()
 
-    assert tokens == [
-        lex.Token(1, 3, lex.Category.NEWLINE, "\n"),
-        lex.Token(2, 1, lex.Category.UNSIGNEDINT, "123"),
-    ]
+    assert tokens == [lex.Token(1, 3, lex.Category.IDENTIFIER, "_identifier_")]
 
 
 def test_tokenizer_produces_binary_addition():

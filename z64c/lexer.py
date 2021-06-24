@@ -19,6 +19,7 @@ class Category(enum.Enum):
     EQUAL = enum.auto()
 
     UNSIGNEDINT = enum.auto()
+    IDENTIFIER = enum.auto()
 
 
 @dataclasses.dataclass
@@ -39,34 +40,40 @@ class Tokenizer:
 
     def tokenize(self) -> List[Token]:
         while self._source_index < len(self._source):
-            if self._source[self._source_index] == " ":
+            next_character = self._source[self._source_index]
+
+            if next_character == " ":
                 self._advance()
-            elif self._source[self._source_index] == "\n":
+
+            elif next_character == "\n":
                 self._produced_tokens.append(self._consume_newline())
 
-            elif self._source[self._source_index].isdigit():
-                self._produced_tokens.append(self._consume_integer())
-
-            elif self._source[self._source_index] == "(":
+            elif next_character == "(":
                 self._produced_tokens.append(self._consume_left_paren())
 
-            elif self._source[self._source_index] == ")":
+            elif next_character == ")":
                 self._produced_tokens.append(self._consume_right_paren())
 
-            elif self._source[self._source_index] == "*":
+            elif next_character == "*":
                 self._produced_tokens.append(self._consume_star())
 
-            elif self._source[self._source_index] == "/":
+            elif next_character == "/":
                 self._produced_tokens.append(self._consume_slash())
 
-            elif self._source[self._source_index] == "+":
+            elif next_character == "+":
                 self._produced_tokens.append(self._consume_plus())
 
-            elif self._source[self._source_index] == "-":
+            elif next_character == "-":
                 self._produced_tokens.append(self._consume_minus())
 
-            elif self._source[self._source_index] == "=":
+            elif next_character == "=":
                 self._produced_tokens.append(self._consume_equal())
+
+            elif next_character.isdigit():
+                self._produced_tokens.append(self._consume_integer())
+
+            elif _is_identifier_character(next_character):
+                self._produced_tokens.append(self._consume_identifier())
 
             else:
                 raise RuntimeError(
@@ -144,3 +151,21 @@ class Tokenizer:
         self._column += len(integer)
         self._source_index += len(integer)
         return token
+
+    def _consume_identifier(self):
+        identifier = "".join(
+            itertools.takewhile(
+                lambda c: _is_identifier_character(c),
+                self._source[self._source_index :],
+            )
+        )
+
+        token = Token(self._line, self._column, Category.IDENTIFIER, identifier)
+
+        self._column += len(identifier)
+        self._source_index += len(identifier)
+        return token
+
+
+def _is_identifier_character(c: Text) -> bool:
+    return (c.isalpha() and c.isascii()) or c == "_"
