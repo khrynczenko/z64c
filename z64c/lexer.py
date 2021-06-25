@@ -2,7 +2,7 @@ import dataclasses
 import enum
 import itertools
 
-from typing import Text, List
+from typing import Text, List, Callable
 
 
 @enum.unique
@@ -46,34 +46,58 @@ class Tokenizer:
                 self._advance()
 
             elif next_character == "\n":
-                self._produced_tokens.append(self._consume_newline())
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol("\n", Category.NEWLINE)
+                )
 
             elif next_character == "(":
-                self._produced_tokens.append(self._consume_left_paren())
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol("(", Category.LEFT_PAREN)
+                )
 
             elif next_character == ")":
-                self._produced_tokens.append(self._consume_right_paren())
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol(")", Category.RIGHT_PAREN)
+                )
 
             elif next_character == "*":
-                self._produced_tokens.append(self._consume_star())
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol("*", Category.STAR)
+                )
 
             elif next_character == "/":
-                self._produced_tokens.append(self._consume_slash())
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol("/", Category.SLASH)
+                )
 
             elif next_character == "+":
-                self._produced_tokens.append(self._consume_plus())
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol("+", Category.PLUS)
+                )
 
             elif next_character == "-":
-                self._produced_tokens.append(self._consume_minus())
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol("-", Category.MINUS)
+                )
 
             elif next_character == "=":
-                self._produced_tokens.append(self._consume_equal())
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol("=", Category.EQUAL)
+                )
 
             elif next_character.isdigit():
-                self._produced_tokens.append(self._consume_integer())
+                self._produced_tokens.append(
+                    self._consume_multi_character_symbol(
+                        str.isdigit, Category.UNSIGNEDINT
+                    )
+                )
 
             elif _is_identifier_character(next_character):
-                self._produced_tokens.append(self._consume_identifier())
+                self._produced_tokens.append(
+                    self._consume_multi_character_symbol(
+                        _is_identifier_character, Category.IDENTIFIER
+                    )
+                )
 
             else:
                 raise RuntimeError(
@@ -91,79 +115,24 @@ class Tokenizer:
         self._column += 1
         self._source_index += 1
 
-    def _consume_newline(self):
-        token = Token(self._line, self._column, Category.NEWLINE, "\n")
+    def _consume_one_character_symbol(self, character: str, category: Category):
+        token = Token(self._line, self._column, category, character)
         self._advance()
 
         return token
 
-    def _consume_left_paren(self):
-        token = Token(self._line, self._column, Category.LEFT_PAREN, "(")
-        self._advance()
-
-        return token
-
-    def _consume_right_paren(self):
-        token = Token(self._line, self._column, Category.RIGHT_PAREN, ")")
-        self._advance()
-
-        return token
-
-    def _consume_star(self):
-        token = Token(self._line, self._column, Category.STAR, "*")
-        self._advance()
-
-        return token
-
-    def _consume_slash(self):
-        token = Token(self._line, self._column, Category.SLASH, "/")
-        self._advance()
-
-        return token
-
-    def _consume_plus(self):
-        token = Token(self._line, self._column, Category.PLUS, "+")
-        self._advance()
-
-        return token
-
-    def _consume_minus(self):
-        token = Token(self._line, self._column, Category.MINUS, "-")
-        self._advance()
-
-        return token
-
-    def _consume_equal(self):
-        token = Token(self._line, self._column, Category.EQUAL, "=")
-        self._advance()
-
-        return token
-
-    def _consume_integer(self):
-        integer = "".join(
-            itertools.takewhile(
-                lambda c: c.isdigit(), self._source[self._source_index :]
-            )
+    def _consume_multi_character_symbol(
+        self, character_predicate: Callable[[str], bool], category: Category
+    ):
+        characters = "".join(
+            itertools.takewhile(character_predicate, self._source[self._source_index :])
         )
 
-        token = Token(self._line, self._column, Category.UNSIGNEDINT, integer)
+        token = Token(self._line, self._column, category, characters)
 
-        self._column += len(integer)
-        self._source_index += len(integer)
-        return token
+        self._column += len(characters)
+        self._source_index += len(characters)
 
-    def _consume_identifier(self):
-        identifier = "".join(
-            itertools.takewhile(
-                lambda c: _is_identifier_character(c),
-                self._source[self._source_index :],
-            )
-        )
-
-        token = Token(self._line, self._column, Category.IDENTIFIER, identifier)
-
-        self._column += len(identifier)
-        self._source_index += len(identifier)
         return token
 
 
