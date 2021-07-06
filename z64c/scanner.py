@@ -1,3 +1,8 @@
+"""
+This file forms a lexical specification and its implemetation for the
+z64 language.
+
+"""
 import dataclasses
 import enum
 import itertools
