@@ -51,9 +51,7 @@ class Scanner:
                 self._advance()
 
             elif next_character == "\n":
-                self._produced_tokens.append(
-                    self._consume_one_character_symbol("\n", TokenCategory.NEWLINE)
-                )
+                self._advance()
 
             elif next_character == "(":
                 self._produced_tokens.append(
@@ -110,7 +108,9 @@ class Scanner:
                     "column {self._column}."
                 )
 
-        return self._produced_tokens
+        return self._produced_tokens + [
+            Token(self._line, self._column, TokenCategory.EOF, "")
+        ]
 
     def _advance(self):
         if self._source[self._source_index] == "\n":
