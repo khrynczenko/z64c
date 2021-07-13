@@ -12,9 +12,14 @@ from typing import Text, List, Callable
 
 @enum.unique
 class TokenCategory(enum.Enum):
+    # SIGNIFICANT WHITESPACE
     EOF = enum.auto()
     NEWLINE = enum.auto()
 
+    # KEYWORDS
+    PRINT = enum.auto()
+
+    # OPERATORS
     LEFT_PAREN = enum.auto()
     RIGHT_PAREN = enum.auto()
     STAR = enum.auto()
@@ -23,8 +28,12 @@ class TokenCategory(enum.Enum):
     MINUS = enum.auto()
     EQUAL = enum.auto()
 
+    # LITERALS
     UNSIGNEDINT = enum.auto()
     IDENTIFIER = enum.auto()
+
+
+KEYWORD_CATEGORIES = {"print": TokenCategory.PRINT}
 
 
 @dataclasses.dataclass
@@ -95,6 +104,11 @@ class Scanner:
                     )
                 )
 
+            elif self._is_keyword_next():
+                self._produced_tokens.append(
+                    self._consume_keyword(_is_identifier_character)
+                )
+
             elif _is_identifier_character(next_character):
                 self._produced_tokens.append(
                     self._consume_multi_character_symbol(
@@ -112,6 +126,14 @@ class Scanner:
             Token(self._line, self._column, TokenCategory.EOF, "")
         ]
 
+    def _is_keyword_next(self):
+        return any(
+            map(
+                lambda keyword: self._source[self._source_index :].startswith(keyword),
+                KEYWORD_CATEGORIES,
+            )
+        )
+
     def _advance(self):
         if self._source[self._source_index] == "\n":
             self._line += 1
@@ -126,14 +148,33 @@ class Scanner:
 
         return token
 
-    def _consume_multi_character_symbol(
-        self, character_predicate: Callable[[str], bool], category: TokenCategory
+    def _consume_keyword(
+        self,
+        character_predicate: Callable[[str], bool],
     ):
         characters = "".join(
             itertools.takewhile(character_predicate, self._source[self._source_index :])
         )
 
-        token = Token(self._line, self._column, category, characters)
+        token = Token(
+            self._line, self._column, KEYWORD_CATEGORIES[characters], characters
+        )
+
+        self._column += len(characters)
+        self._source_index += len(characters)
+
+        return token
+
+    def _consume_multi_character_symbol(
+        self,
+        character_predicate: Callable[[str], bool],
+        resulting_category: TokenCategory,
+    ):
+        characters = "".join(
+            itertools.takewhile(character_predicate, self._source[self._source_index :])
+        )
+
+        token = Token(self._line, self._column, resulting_category, characters)
 
         self._column += len(characters)
         self._source_index += len(characters)

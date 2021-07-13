@@ -100,6 +100,17 @@ def test_scanner_produces_unsignedint():
     ]
 
 
+def test_scanner_produces_print_keyword():
+    source = "  print  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.PRINT, "print"),
+        Token(1, 10, TokenCategory.EOF, ""),
+    ]
+
+
 def test_scanner_produces_identifier():
     source = "  _identifier_  "
     scanner = Scanner(source)
