@@ -1,12 +1,24 @@
 from z64c.scanner import Scanner, Token, TokenCategory
 
 
+def test_scanner_produces_newline():
+    source = "  \n  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.NEWLINE, "\n"),
+        Token(2, 3, TokenCategory.EOF, ""),
+    ]
+
+
 def test_scanner_produces_token_after_a_newline():
     source = "  \n123"
     scanner = Scanner(source)
     tokens = scanner.scan()
 
     assert tokens == [
+        Token(1, 3, TokenCategory.NEWLINE, "\n"),
         Token(2, 1, TokenCategory.UNSIGNEDINT, "123"),
         Token(2, 4, TokenCategory.EOF, ""),
     ]

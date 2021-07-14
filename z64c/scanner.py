@@ -60,7 +60,9 @@ class Scanner:
                 self._advance()
 
             elif next_character == "\n":
-                self._advance()
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol("\n", TokenCategory.NEWLINE)
+                )
 
             elif next_character == "(":
                 self._produced_tokens.append(
