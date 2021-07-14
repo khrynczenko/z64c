@@ -19,14 +19,17 @@ class TokenCategory(enum.Enum):
     # KEYWORDS
     PRINT = enum.auto()
 
-    # OPERATORS
+    # PARENTHESES
     LEFT_PAREN = enum.auto()
     RIGHT_PAREN = enum.auto()
+
+    # BINARY OP
     STAR = enum.auto()
     SLASH = enum.auto()
     PLUS = enum.auto()
     MINUS = enum.auto()
     EQUAL = enum.auto()
+    ASSIGN = enum.auto()
 
     # LITERALS
     UNSIGNEDINT = enum.auto()
@@ -54,52 +57,57 @@ class Scanner:
 
     def scan(self) -> List[Token]:
         while self._source_index < len(self._source):
-            next_character = self._source[self._source_index]
+            remaining_source = self._source[self._source_index :]
 
-            if next_character == " ":
+            if remaining_source.startswith(" "):
                 self._advance()
 
-            elif next_character == "\n":
+            elif remaining_source.startswith("\n"):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol("\n", TokenCategory.NEWLINE)
                 )
 
-            elif next_character == "(":
+            elif remaining_source.startswith("("):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol("(", TokenCategory.LEFT_PAREN)
                 )
 
-            elif next_character == ")":
+            elif remaining_source.startswith(")"):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol(")", TokenCategory.RIGHT_PAREN)
                 )
 
-            elif next_character == "*":
+            elif remaining_source.startswith("*"):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol("*", TokenCategory.STAR)
                 )
 
-            elif next_character == "/":
+            elif remaining_source.startswith("/"):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol("/", TokenCategory.SLASH)
                 )
 
-            elif next_character == "+":
+            elif remaining_source.startswith("+"):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol("+", TokenCategory.PLUS)
                 )
 
-            elif next_character == "-":
+            elif remaining_source.startswith("-"):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol("-", TokenCategory.MINUS)
                 )
 
-            elif next_character == "=":
+            elif remaining_source.startswith("=="):
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol("==", TokenCategory.ASSIGN)
+                )
+
+            elif remaining_source.startswith("="):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol("=", TokenCategory.EQUAL)
                 )
 
-            elif next_character.isdigit():
+            elif remaining_source[0].isdigit():
                 self._produced_tokens.append(
                     self._consume_multi_character_symbol(
                         str.isdigit, TokenCategory.UNSIGNEDINT
@@ -111,7 +119,7 @@ class Scanner:
                     self._consume_keyword(_is_identifier_character)
                 )
 
-            elif _is_identifier_character(next_character):
+            elif _is_identifier_character(remaining_source[0]):
                 self._produced_tokens.append(
                     self._consume_multi_character_symbol(
                         _is_identifier_character, TokenCategory.IDENTIFIER
