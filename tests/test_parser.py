@@ -1,5 +1,15 @@
 from typing import List
 
+from z64c.ast import (
+    Program,
+    Print,
+    Assignment,
+    Addition,
+    Multiplication,
+    Negation,
+    Unsignedint,
+    Identifier,
+)
 from z64c.scanner import Token, TokenCategory
 from z64c.parser import Parser
 
@@ -8,80 +18,120 @@ def build_test_tokens_from_categories(categories: List[TokenCategory]):
     return [Token(0, 0, category, "") for category in categories]
 
 
+def make_token_with_lexeme(category: TokenCategory, lexeme: str) -> Token:
+    return Token(0, 0, category, lexeme)
+
+
+def make_arbitrary_token(category: TokenCategory) -> Token:
+    return Token(0, 0, category, "")
+
+
 def test_parsing_print_identifier():
-    tokens = build_test_tokens_from_categories(
-        [
-            TokenCategory.PRINT,
-            TokenCategory.LEFT_PAREN,
-            TokenCategory.UNSIGNEDINT,
-            TokenCategory.RIGHT_PAREN,
-            TokenCategory.NEWLINE,
-            TokenCategory.EOF,
-        ]
-    )
+    tokens = [
+        make_arbitrary_token(TokenCategory.PRINT),
+        make_arbitrary_token(TokenCategory.LEFT_PAREN),
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "10"),
+        make_arbitrary_token(TokenCategory.RIGHT_PAREN),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+        make_arbitrary_token(TokenCategory.EOF),
+    ]
+
     parser = Parser(tokens)
-    parser.parse()
+    ast = parser.parse()
+    expected_ast = Program([Print(Unsignedint(10))])
+    assert ast == expected_ast
 
 
 def test_parsing_assignment_unsignedint():
-    tokens = build_test_tokens_from_categories(
-        [
-            TokenCategory.IDENTIFIER,
-            TokenCategory.ASSIGN,
-            TokenCategory.UNSIGNEDINT,
-            TokenCategory.NEWLINE,
-            TokenCategory.EOF,
-        ]
-    )
+    tokens = [
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "x"),
+        make_arbitrary_token(TokenCategory.ASSIGN),
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "10"),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+        make_arbitrary_token(TokenCategory.EOF),
+    ]
+
     parser = Parser(tokens)
-    parser.parse()
+    ast = parser.parse()
+    expected_ast = Program([Assignment("x", Unsignedint(10))])
+    assert ast == expected_ast
+
+
+def test_parsing_assignment_negated_unsignedint():
+    tokens = [
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "x"),
+        make_arbitrary_token(TokenCategory.ASSIGN),
+        make_arbitrary_token(TokenCategory.MINUS),
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "10"),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+        make_arbitrary_token(TokenCategory.EOF),
+    ]
+
+    parser = Parser(tokens)
+    ast = parser.parse()
+    expected_ast = Program([Assignment("x", Negation(Unsignedint(10)))])
+    assert ast == expected_ast
 
 
 def test_parsing_assignment_identifier():
-    tokens = build_test_tokens_from_categories(
-        [
-            TokenCategory.IDENTIFIER,
-            TokenCategory.ASSIGN,
-            TokenCategory.IDENTIFIER,
-            TokenCategory.NEWLINE,
-            TokenCategory.EOF,
-        ]
-    )
+    tokens = [
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "x"),
+        make_arbitrary_token(TokenCategory.ASSIGN),
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "y"),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+        make_arbitrary_token(TokenCategory.EOF),
+    ]
+
     parser = Parser(tokens)
-    parser.parse()
+    ast = parser.parse()
+    expected_ast = Program([Assignment("x", Identifier("y"))])
+    assert ast == expected_ast
 
 
 def test_parsing_assignment_arithmetic_expression():
-    tokens = build_test_tokens_from_categories(
-        [
-            TokenCategory.IDENTIFIER,
-            TokenCategory.ASSIGN,
-            TokenCategory.UNSIGNEDINT,
-            TokenCategory.STAR,
-            TokenCategory.IDENTIFIER,
-            TokenCategory.NEWLINE,
-            TokenCategory.EOF,
-        ]
-    )
+    tokens = [
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "x"),
+        make_arbitrary_token(TokenCategory.ASSIGN),
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "10"),
+        make_arbitrary_token(TokenCategory.STAR),
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "y"),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+        make_arbitrary_token(TokenCategory.EOF),
+    ]
+
     parser = Parser(tokens)
-    parser.parse()
+    ast = parser.parse()
+    expected_ast = Program(
+        [Assignment("x", Multiplication(Unsignedint(10), Identifier("y")))]
+    )
+    assert ast == expected_ast
 
 
 def test_parsing_assignment_complex_arithmetic_expression():
-    tokens = build_test_tokens_from_categories(
+    tokens = [
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "x"),
+        make_arbitrary_token(TokenCategory.ASSIGN),
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "10"),
+        make_arbitrary_token(TokenCategory.STAR),
+        make_arbitrary_token(TokenCategory.LEFT_PAREN),
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "y"),
+        make_arbitrary_token(TokenCategory.PLUS),
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "20"),
+        make_arbitrary_token(TokenCategory.RIGHT_PAREN),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+        make_arbitrary_token(TokenCategory.EOF),
+    ]
+
+    parser = Parser(tokens)
+    ast = parser.parse()
+    expected_ast = Program(
         [
-            TokenCategory.IDENTIFIER,
-            TokenCategory.ASSIGN,
-            TokenCategory.UNSIGNEDINT,
-            TokenCategory.STAR,
-            TokenCategory.LEFT_PAREN,
-            TokenCategory.IDENTIFIER,
-            TokenCategory.PLUS,
-            TokenCategory.UNSIGNEDINT,
-            TokenCategory.RIGHT_PAREN,
-            TokenCategory.NEWLINE,
-            TokenCategory.EOF,
+            Assignment(
+                "x",
+                Multiplication(
+                    Unsignedint(10), Addition(Identifier("y"), Unsignedint(20))
+                ),
+            )
         ]
     )
-    parser = Parser(tokens)
-    parser.parse()
+    assert ast == expected_ast

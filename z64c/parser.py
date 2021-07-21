@@ -24,6 +24,17 @@ Below is the language grammar.
 from typing import List
 
 from z64c.scanner import Token, TokenCategory
+from z64c.ast import (
+    Ast,
+    Program,
+    Print,
+    Assignment,
+    Addition,
+    Multiplication,
+    Negation,
+    Unsignedint,
+    Identifier,
+)
 
 
 class Parser:
@@ -31,7 +42,7 @@ class Parser:
         self._tokens = tokens
 
     def parse(self):
-        self._parse_program()
+        return self._parse_program()
 
     @property
     def _current_token(self) -> Token:
@@ -50,59 +61,76 @@ class Parser:
         self._tokens = self._tokens[1:]
         return token
 
-    def _parse_program(self):
+    def _parse_program(self) -> Ast:
+        statements = []
         while self._current_token.category is not TokenCategory.EOF:
-            self._parse_statement()
+            statements.append(self._parse_statement())
+        return Program(statements)
 
-    def _parse_statement(self):
+    def _parse_statement(self) -> Ast:
         if self._current_token.category is TokenCategory.PRINT:
-            self._parse_print()
+            print_statement = self._parse_print()
+            self._consume(TokenCategory.NEWLINE)
+            return print_statement
         else:
-            self._parse_assignment()
-        self._consume(TokenCategory.NEWLINE)
+            assignment_statement = self._parse_assignment()
+            self._consume(TokenCategory.NEWLINE)
+            return assignment_statement
 
-    def _parse_print(self):
+    def _parse_print(self) -> Ast:
         self._consume(TokenCategory.PRINT)
         self._consume(TokenCategory.LEFT_PAREN)
-        self._parse_expression()
+        expression = self._parse_expression()
         self._consume(TokenCategory.RIGHT_PAREN)
+        return Print(expression)
 
-    def _parse_assignment(self):
-        self._consume(TokenCategory.IDENTIFIER)
+    def _parse_assignment(self) -> Ast:
+        name_token = self._consume(TokenCategory.IDENTIFIER)
         self._consume(TokenCategory.ASSIGN)
-        self._parse_expression()
+        expression = self._parse_expression()
+        return Assignment(name_token.lexeme, expression)
 
-    def _parse_expression(self):
-        self._parse_term()
-        while self._current_token.category is TokenCategory.PLUS:
-            self._advance()
-            self._parse_term()
-
-    def _parse_term(self):
-        self._parse_factor()
-        while self._current_token.category is TokenCategory.STAR:
-            self._advance()
-            self._parse_factor()
-
-    def _parse_factor(self):
+    def _parse_expression(self) -> Ast:
+        lhs = self._parse_term()
         if self._current_token.category is TokenCategory.PLUS:
             self._advance()
-            self._parse_factor()
+            rhs = self._parse_expression()
+            return Addition(lhs, rhs)
+        return lhs
+
+    def _parse_term(self) -> Ast:
+        lhs = self._parse_factor()
+        if self._current_token.category is TokenCategory.STAR:
+            self._advance()
+            rhs = self._parse_term()
+            return Multiplication(lhs, rhs)
+        return lhs
+
+    def _parse_factor(self) -> Ast:
+        if self._current_token.category is TokenCategory.PLUS:
+            self._advance()
+            return self._parse_factor()
         elif self._current_token.category is TokenCategory.MINUS:
             self._advance()
-            self._parse_factor()
+            factor = self._parse_factor()
+            return Negation(factor)
         elif self._current_token.category is TokenCategory.LEFT_PAREN:
             self._advance()
-            self._parse_expression()
+            expression = self._parse_expression()
             self._consume(TokenCategory.RIGHT_PAREN)
+            return expression
         else:
-            self._parse_atom()
+            return self._parse_atom()
 
-    def _parse_atom(self):
+    def _parse_atom(self) -> Ast:
         if self._current_token.category is TokenCategory.UNSIGNEDINT:
+            value = int(self._current_token.lexeme)
             self._advance()
+            return Unsignedint(value)
         elif self._current_token.category is TokenCategory.IDENTIFIER:
+            value = self._current_token.lexeme
             self._advance()
+            return Identifier(value)
         else:
             raise RuntimeError(
                 f"Unexpected token, expected one of "
