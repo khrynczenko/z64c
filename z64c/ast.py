@@ -41,15 +41,6 @@ class Addition(Ast):
         return self._lhs == rhs._lhs and self._rhs == rhs._rhs
 
 
-class Multiplication(Ast):
-    def __init__(self, lhs: Ast, rhs: Ast):
-        self._lhs = lhs
-        self._rhs = rhs
-
-    def __eq__(self, rhs: Multiplication) -> bool:
-        return self._lhs == rhs._lhs and self._rhs == rhs._rhs
-
-
 class Negation(Ast):
     def __init__(self, expression: Ast):
         self._expression = expression

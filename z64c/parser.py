@@ -30,7 +30,6 @@ from z64c.ast import (
     Print,
     Assignment,
     Addition,
-    Multiplication,
     Negation,
     Unsignedint,
     Identifier,
@@ -99,12 +98,7 @@ class Parser:
         return lhs
 
     def _parse_term(self) -> Ast:
-        lhs = self._parse_factor()
-        if self._current_token.category is TokenCategory.STAR:
-            self._advance()
-            rhs = self._parse_term()
-            return Multiplication(lhs, rhs)
-        return lhs
+        return self._parse_factor()
 
     def _parse_factor(self) -> Ast:
         if self._current_token.category is TokenCategory.PLUS:

@@ -46,28 +46,6 @@ def test_scanner_produces_right_paren():
     ]
 
 
-def test_scanner_produces_star():
-    source = "  *  "
-    scanner = Scanner(source)
-    tokens = scanner.scan()
-
-    assert tokens == [
-        Token(1, 3, TokenCategory.STAR, "*"),
-        Token(1, 6, TokenCategory.EOF, ""),
-    ]
-
-
-def test_scanner_produces_slash():
-    source = "  /  "
-    scanner = Scanner(source)
-    tokens = scanner.scan()
-
-    assert tokens == [
-        Token(1, 3, TokenCategory.SLASH, "/"),
-        Token(1, 6, TokenCategory.EOF, ""),
-    ]
-
-
 def test_scanner_produces_plus():
     source = "  +  "
     scanner = Scanner(source)

@@ -24,8 +24,6 @@ class TokenCategory(enum.Enum):
     RIGHT_PAREN = enum.auto()
 
     # BINARY OP
-    STAR = enum.auto()
-    SLASH = enum.auto()
     PLUS = enum.auto()
     MINUS = enum.auto()
     EQUAL = enum.auto()
@@ -75,16 +73,6 @@ class Scanner:
             elif remaining_source.startswith(")"):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol(")", TokenCategory.RIGHT_PAREN)
-                )
-
-            elif remaining_source.startswith("*"):
-                self._produced_tokens.append(
-                    self._consume_one_character_symbol("*", TokenCategory.STAR)
-                )
-
-            elif remaining_source.startswith("/"):
-                self._produced_tokens.append(
-                    self._consume_one_character_symbol("/", TokenCategory.SLASH)
                 )
 
             elif remaining_source.startswith("+"):

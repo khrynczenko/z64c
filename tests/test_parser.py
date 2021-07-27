@@ -5,7 +5,6 @@ from z64c.ast import (
     Print,
     Assignment,
     Addition,
-    Multiplication,
     Negation,
     Unsignedint,
     Identifier,
@@ -93,7 +92,7 @@ def test_parsing_assignment_arithmetic_expression():
         make_token_with_lexeme(TokenCategory.IDENTIFIER, "x"),
         make_arbitrary_token(TokenCategory.ASSIGN),
         make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "10"),
-        make_arbitrary_token(TokenCategory.STAR),
+        make_arbitrary_token(TokenCategory.PLUS),
         make_token_with_lexeme(TokenCategory.IDENTIFIER, "y"),
         make_arbitrary_token(TokenCategory.NEWLINE),
         make_arbitrary_token(TokenCategory.EOF),
@@ -102,7 +101,7 @@ def test_parsing_assignment_arithmetic_expression():
     parser = Parser(tokens)
     ast = parser.parse()
     expected_ast = Program(
-        [Assignment("x", Multiplication(Unsignedint(10), Identifier("y")))]
+        [Assignment("x", Addition(Unsignedint(10), Identifier("y")))]
     )
     assert ast == expected_ast
 
@@ -112,7 +111,7 @@ def test_parsing_assignment_complex_arithmetic_expression():
         make_token_with_lexeme(TokenCategory.IDENTIFIER, "x"),
         make_arbitrary_token(TokenCategory.ASSIGN),
         make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "10"),
-        make_arbitrary_token(TokenCategory.STAR),
+        make_arbitrary_token(TokenCategory.PLUS),
         make_arbitrary_token(TokenCategory.LEFT_PAREN),
         make_token_with_lexeme(TokenCategory.IDENTIFIER, "y"),
         make_arbitrary_token(TokenCategory.PLUS),
@@ -128,9 +127,7 @@ def test_parsing_assignment_complex_arithmetic_expression():
         [
             Assignment(
                 "x",
-                Multiplication(
-                    Unsignedint(10), Addition(Identifier("y"), Unsignedint(20))
-                ),
+                Addition(Unsignedint(10), Addition(Identifier("y"), Unsignedint(20))),
             )
         ]
     )
