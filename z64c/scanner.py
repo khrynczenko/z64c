@@ -87,12 +87,12 @@ class Scanner:
 
             elif remaining_source.startswith("=="):
                 self._produced_tokens.append(
-                    self._consume_one_character_symbol("==", TokenCategory.ASSIGN)
+                    self._consume_two_character_symbol("==", TokenCategory.EQUAL)
                 )
 
             elif remaining_source.startswith("="):
                 self._produced_tokens.append(
-                    self._consume_one_character_symbol("=", TokenCategory.EQUAL)
+                    self._consume_one_character_symbol("=", TokenCategory.ASSIGN)
                 )
 
             elif remaining_source[0].isdigit():
@@ -142,6 +142,13 @@ class Scanner:
 
     def _consume_one_character_symbol(self, character: str, category: TokenCategory):
         token = Token(self._line, self._column, category, character)
+        self._advance()
+
+        return token
+
+    def _consume_two_character_symbol(self, characters: str, category: TokenCategory):
+        token = Token(self._line, self._column, category, characters)
+        self._advance()
         self._advance()
 
         return token

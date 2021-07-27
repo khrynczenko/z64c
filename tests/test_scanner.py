@@ -69,12 +69,23 @@ def test_scanner_produces_minus():
 
 
 def test_scanner_produces_equal():
+    source = "  ==  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.EQUAL, "=="),
+        Token(1, 7, TokenCategory.EOF, ""),
+    ]
+
+
+def test_scanner_produces_assign():
     source = "  =  "
     scanner = Scanner(source)
     tokens = scanner.scan()
 
     assert tokens == [
-        Token(1, 3, TokenCategory.EQUAL, "="),
+        Token(1, 3, TokenCategory.ASSIGN, "="),
         Token(1, 6, TokenCategory.EOF, ""),
     ]
 
