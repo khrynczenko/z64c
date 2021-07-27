@@ -117,7 +117,7 @@ class Scanner:
             else:
                 raise RuntimeError(
                     f"Unrecognized syntax at line {self._line} "
-                    "column {self._column}."
+                    f"column {self._column}."
                 )
 
         return self._produced_tokens + [
