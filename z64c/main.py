@@ -1,6 +1,6 @@
 import click
 
-from z64c.ast import Environment
+from z64c.ast import Environment, SjasmplusSnapshotProgram
 from z64c.scanner import Scanner
 from z64c.parser import Parser
 
@@ -14,6 +14,7 @@ def z64c(source: str):
     tokens = scanner.scan()
     parser = Parser(tokens)
     ast = parser.parse()
+    ast = SjasmplusSnapshotProgram(ast, source.rstrip(".z64c"))
     ast.emit(Environment())
 
 

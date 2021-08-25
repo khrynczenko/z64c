@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 
-from typing import List, Tuple
+from typing import List, Text
 from abc import ABC
 
 INDENTATION = "    "
@@ -10,21 +10,37 @@ INDENTATION = "    "
 
 class Environment:
     def __init__(self):
-        self._variables = {}
-        self._idx = 0
+        self._variable_offsets = {}
 
-    def add_variable(self, name: str, value):
-        self._idx = self._idx + 1
-        self._variables[name] = self._idx
+    def add_variable(self, name: str):
+        self._variable_offsets[name] = -1
+        self._variable_offsets = {
+            key: offset + 1 for key, offset in self._variable_offsets.items()
+        }
 
-    def get_variable(self, name: str) -> int:
-        return self._variables[name]
+    def get_variable_offset(self, name: str) -> int:
+        return self._variable_offsets[name]
 
 
 class Ast(ABC):
     @abc.abstractmethod
     def emit(self, environment: Environment):
         pass
+
+
+class SjasmplusSnapshotProgram(Ast):
+    def __init__(self, program: Program, source_name: Text):
+        self._program = program
+        self._source_name = source_name
+
+    def __eq__(self, rhs: SjasmplusSnapshotProgram) -> bool:
+        return self._program == rhs._program and self._source_name == rhs._source_name
+
+    def emit(self, environment: Environment):
+        print(f"{INDENTATION}DEVICE ZXSPECTRUM48")
+        self._program.emit(environment)
+        print("")
+        print(f'{INDENTATION}SAVESNA "{self._source_name}.sna", start')
 
 
 class Program(Ast):
@@ -35,9 +51,10 @@ class Program(Ast):
         return self._statements == rhs._statements
 
     def emit(self, environment: Environment):
-        print(f"{INDENTATION}org &1000")
+        print(f"{INDENTATION}org $8000")
+        print("")
+        print("start:")
         for statement in self._statements:
-            print("")
             statement.emit(environment)
         print(f"{INDENTATION}ret")
 
@@ -51,7 +68,7 @@ class Print(Ast):
 
     def emit(self, environment: Environment):
         self._expression.emit(environment)
-        print(f"{INDENTATION}call &BB5A")
+        print(f"{INDENTATION}rst $10")
 
 
 class Assignment(Ast):
@@ -63,8 +80,9 @@ class Assignment(Ast):
         return self._name == rhs._name and self._rhs == rhs._rhs
 
     def emit(self, environment: Environment):
+        self._rhs.emit(environment)
         environment.add_variable(self._name)
-        print(f"{INDENTATION}push a")
+        print(f"{INDENTATION}push af")
 
 
 class Addition(Ast):
@@ -102,7 +120,11 @@ class Identifier(Ast):
         return self._value == rhs._value
 
     def emit(self, environment: Environment):
-        idx
+        offset = environment.get_variable_offset(self._value)
+        print(f"{INDENTATION}ld hl, $00")
+        print(f"{INDENTATION}add hl, sp")
+        print(f"{INDENTATION}ld ix, hl")
+        print(f"{INDENTATION}ld a, (ix + {offset + 1})")
 
 
 class Unsignedint(Ast):
