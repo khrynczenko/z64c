@@ -2,29 +2,38 @@ from __future__ import annotations
 
 import abc
 
-from typing import List, Text
+from typing import List, Text, TypeVar, Generic
 from abc import ABC
 
-INDENTATION = "    "
+T = TypeVar("T")
 
 
-class Environment:
-    def __init__(self):
-        self._variable_offsets = {}
+class AstVisitor(ABC, Generic[T]):
+    def visitProgram(self, node: Program) -> T:
+        pass
 
-    def add_variable(self, name: str):
-        self._variable_offsets[name] = -1
-        self._variable_offsets = {
-            key: offset + 1 for key, offset in self._variable_offsets.items()
-        }
+    def visitPrint(self, node: Print) -> T:
+        pass
 
-    def get_variable_offset(self, name: str) -> int:
-        return self._variable_offsets[name]
+    def visitAssigment(self, node: Assignment) -> T:
+        pass
+
+    def visitAddition(self, node: Addition) -> T:
+        pass
+
+    def visitNegation(self, node: Negation) -> T:
+        pass
+
+    def visitIdentifier(self, node: Identifier) -> T:
+        pass
+
+    def visitUnsignedint(self, node: Unsignedint) -> T:
+        pass
 
 
 class Ast(ABC):
     @abc.abstractmethod
-    def emit(self, environment: Environment):
+    def visit(self, v: AstVisitor[T]) -> T:
         pass
 
 
@@ -36,11 +45,8 @@ class SjasmplusSnapshotProgram(Ast):
     def __eq__(self, rhs: SjasmplusSnapshotProgram) -> bool:
         return self._program == rhs._program and self._source_name == rhs._source_name
 
-    def emit(self, environment: Environment):
-        print(f"{INDENTATION}DEVICE ZXSPECTRUM48")
-        self._program.emit(environment)
-        print("")
-        print(f'{INDENTATION}SAVESNA "{self._source_name}.sna", start')
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visitProgram(self)
 
 
 class Program(Ast):
@@ -50,13 +56,8 @@ class Program(Ast):
     def __eq__(self, rhs: Program) -> bool:
         return self._statements == rhs._statements
 
-    def emit(self, environment: Environment):
-        print(f"{INDENTATION}org $8000")
-        print("")
-        print("start:")
-        for statement in self._statements:
-            statement.emit(environment)
-        print(f"{INDENTATION}ret")
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visitProgram(self)
 
 
 class Print(Ast):
@@ -66,9 +67,8 @@ class Print(Ast):
     def __eq__(self, rhs: Print) -> bool:
         return self._expression == rhs._expression
 
-    def emit(self, environment: Environment):
-        self._expression.emit(environment)
-        print(f"{INDENTATION}rst $10")
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visitPrint(self)
 
 
 class Assignment(Ast):
@@ -79,10 +79,8 @@ class Assignment(Ast):
     def __eq__(self, rhs: Assignment) -> bool:
         return self._name == rhs._name and self._rhs == rhs._rhs
 
-    def emit(self, environment: Environment):
-        self._rhs.emit(environment)
-        environment.add_variable(self._name)
-        print(f"{INDENTATION}push af")
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visitAssigment(self)
 
 
 class Addition(Ast):
@@ -93,11 +91,8 @@ class Addition(Ast):
     def __eq__(self, rhs: Addition) -> bool:
         return self._lhs == rhs._lhs and self._rhs == rhs._rhs
 
-    def emit(self, environment: Environment):
-        self._lhs.emit(environment)
-        print(f"{INDENTATION}ld b, a")
-        self._rhs.emit(environment)
-        print(f"{INDENTATION}adc a, b")
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visitAddition(self)
 
 
 class Negation(Ast):
@@ -107,9 +102,8 @@ class Negation(Ast):
     def __eq__(self, rhs: Negation) -> bool:
         return self._expression == rhs._expression
 
-    def emit(self, environment: Environment):
-        self._expression.emit(environment)
-        print(f"{INDENTATION}neg")
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visitNegation(self)
 
 
 class Identifier(Ast):
@@ -119,12 +113,8 @@ class Identifier(Ast):
     def __eq__(self, rhs: Identifier) -> bool:
         return self._value == rhs._value
 
-    def emit(self, environment: Environment):
-        offset = environment.get_variable_offset(self._value)
-        print(f"{INDENTATION}ld hl, $00")
-        print(f"{INDENTATION}add hl, sp")
-        print(f"{INDENTATION}ld ix, hl")
-        print(f"{INDENTATION}ld a, (ix + {offset + 1})")
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visitIdentifier(self)
 
 
 class Unsignedint(Ast):
@@ -134,5 +124,5 @@ class Unsignedint(Ast):
     def __eq__(self, rhs: Unsignedint) -> bool:
         return self._value == rhs._value
 
-    def emit(self, environment: Environment):
-        print(f"{INDENTATION}ld a, {self._value}")
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visitUnsignedint(self)
