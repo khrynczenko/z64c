@@ -5,6 +5,7 @@ from abc import ABC
 from typing import Union
 
 from z64c.ast import (
+    SourceContext,
     Program,
     Print,
     Assignment,
@@ -24,8 +25,13 @@ class Environment:
     def add_variable(self, name: str, variable_type: Type):
         self._variable_types[name] = variable_type
 
-    def get_variable_type(self, name: str) -> Union[Type, TypecheckError]:
-        return self._variable_types.get(name, UndefinedVariable(name))
+    def get_variable_type(
+        self, name: str, context: SourceContext
+    ) -> Union[Type, TypecheckError]:
+        """
+        :param context: used to create error in case the variable is not defined
+        """
+        return self._variable_types.get(name, UndefinedVariable(name, context))
 
 
 class TypecheckError(ABC):
@@ -48,22 +54,30 @@ class CombinedTypecheckErrors(TypecheckError):
 
 
 class TypeMismatch(TypecheckError):
-    def __init__(self, expected_type: Type, received_type: Type):
+    def __init__(
+        self, expected_type: Type, received_type: Type, context: SourceContext
+    ):
+        self._context = context
         self._expected_type = expected_type
         self._received_type = received_type
 
     def make_error_message(self) -> str:
         return (
+            f"At line {self._context.line}, column {self._context.column}: "
             f"Expected type {self._expected_type}. Received type {self._received_type}."
         )
 
 
 class UndefinedVariable(TypecheckError):
-    def __init__(self, variable_name: str):
+    def __init__(self, variable_name: str, context: SourceContext):
+        self._context = context
         self._variable_name = variable_name
 
     def make_error_message(self) -> str:
-        return f"Undefined variable {self._variable_name}."
+        return (
+            f"At line {self._context.line}, column {self._context.column}: "
+            f"Undefined variable {self._variable_name}."
+        )
 
 
 TypecheckResult = Union[Type, TypecheckError]
@@ -106,10 +120,10 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
             return rhs_check_result
 
         if lhs_check_result is not Type.U8:
-            return TypeMismatch(Type.U8, lhs_check_result)
+            return TypeMismatch(Type.U8, lhs_check_result, node._lhs.context)
 
         if rhs_check_result is not Type.U8:
-            return TypeMismatch(Type.U8, rhs_check_result)
+            return TypeMismatch(Type.U8, rhs_check_result, node._rhs.context)
 
         return Type.U8
 
@@ -120,12 +134,12 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
             return check_result
 
         if check_result is not Type.U8:
-            return TypeMismatch(Type.U8, check_result)
+            return TypeMismatch(Type.U8, check_result, node.context)
 
         return check_result
 
     def visitIdentifier(self, node: Identifier) -> TypecheckResult:
-        return self._environment.get_variable_type(node._value)
+        return self._environment.get_variable_type(node._value, node.context)
 
     def visitUnsignedint(self, node: Unsignedint) -> TypecheckResult:
         return Type.U8
