@@ -90,7 +90,7 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
 
     def visitProgram(self, node: Program) -> TypecheckResult:
         checks: TypecheckResult = []
-        for statement in node._statements:
+        for statement in node.statements:
             checks.append(statement.visit(self))
 
         errors = [error for error in checks if isinstance(error, TypecheckError)]
@@ -100,19 +100,19 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
         return Type.VOID
 
     def visitPrint(self, node: Print) -> TypecheckResult:
-        check_result = node._expression.visit(self)
+        check_result = node.expression.visit(self)
         if isinstance(check_result, TypecheckError):
             return check_result
 
         return Type.VOID
 
     def visitAssigment(self, node: Assignment) -> TypecheckResult:
-        self._environment.add_variable(node._name, Type.U8)
+        self._environment.add_variable(node.name, Type.U8)
         return Type.VOID
 
     def visitAddition(self, node: Addition) -> TypecheckResult:
-        lhs_check_result = node._lhs.visit(self)
-        rhs_check_result = node._rhs.visit(self)
+        lhs_check_result = node.lhs.visit(self)
+        rhs_check_result = node.rhs.visit(self)
 
         if isinstance(lhs_check_result, TypecheckError):
             return lhs_check_result
@@ -121,15 +121,15 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
             return rhs_check_result
 
         if lhs_check_result is not Type.U8:
-            return TypeMismatch(Type.U8, lhs_check_result, node._lhs.context)
+            return TypeMismatch(Type.U8, lhs_check_result, node.lhs.context)
 
         if rhs_check_result is not Type.U8:
-            return TypeMismatch(Type.U8, rhs_check_result, node._rhs.context)
+            return TypeMismatch(Type.U8, rhs_check_result, node.rhs.context)
 
         return Type.U8
 
     def visitNegation(self, node: Negation) -> TypecheckResult:
-        check_result = node._expression.visit(self)
+        check_result = node.expression.visit(self)
 
         if isinstance(check_result, TypecheckError):
             return check_result
@@ -140,7 +140,7 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
         return check_result
 
     def visitIdentifier(self, node: Identifier) -> TypecheckResult:
-        return self._environment.get_variable_type(node._value, node.context)
+        return self._environment.get_variable_type(node.value, node.context)
 
     def visitUnsignedint(self, node: Unsignedint) -> TypecheckResult:
         return Type.U8
