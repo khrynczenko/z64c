@@ -134,3 +134,23 @@ def test_scanner_produces_binary_addition():
         Token(1, 8, TokenCategory.UNSIGNEDINT, "34"),
         Token(1, 10, TokenCategory.EOF, ""),
     ]
+
+
+def test_scanner_has_right_token_locations_for_two_line_program():
+    source = "x = 1\nprint(1 + y)"
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 1, TokenCategory.IDENTIFIER, "x"),
+        Token(1, 3, TokenCategory.ASSIGN, "="),
+        Token(1, 5, TokenCategory.UNSIGNEDINT, "1"),
+        Token(1, 6, TokenCategory.NEWLINE, "\n"),
+        Token(2, 1, TokenCategory.PRINT, "print"),
+        Token(2, 6, TokenCategory.LEFT_PAREN, "("),
+        Token(2, 7, TokenCategory.UNSIGNEDINT, "1"),
+        Token(2, 9, TokenCategory.PLUS, "+"),
+        Token(2, 11, TokenCategory.IDENTIFIER, "y"),
+        Token(2, 12, TokenCategory.RIGHT_PAREN, ")"),
+        Token(2, 13, TokenCategory.EOF, ""),
+    ]
