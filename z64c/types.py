@@ -7,3 +7,4 @@ from enum import Enum
 class Type(Enum):
     VOID = enum.auto()
     U8 = enum.auto()
+    BOOL = enum.auto()

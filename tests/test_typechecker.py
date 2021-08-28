@@ -8,6 +8,7 @@ from tests.ast import (
     NegationTC,
     UnsignedintTC,
     IdentifierTC,
+    BoolTC,
 )
 from z64c.typechecker import (
     TypecheckerVisitor,
@@ -27,6 +28,14 @@ def test_unsignedint_node_type():
     assert typecheck_result is Type.U8
 
 
+def test_bool_node_type():
+    ast = BoolTC(True)
+
+    typecheck_result = ast.visit(TypecheckerVisitor())
+
+    assert typecheck_result is Type.BOOL
+
+
 def test_addition_node_type():
     ast = AdditionTC(UnsignedintTC(1), UnsignedintTC(2))
 
@@ -36,19 +45,19 @@ def test_addition_node_type():
 
 
 def test_addition_node_type_mismatch_rhs():
-    ast = AdditionTC(UnsignedintTC(1), ProgramTC([]))
+    ast = AdditionTC(UnsignedintTC(1), BoolTC(True))
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result == TypeMismatch(Type.U8, Type.VOID, TEST_CONTEXT)
+    assert typecheck_result == TypeMismatch(Type.U8, Type.BOOL, TEST_CONTEXT)
 
 
 def test_addition_node_type_mismatch_lhs():
-    ast = AdditionTC(ProgramTC([]), UnsignedintTC(1))
+    ast = AdditionTC(BoolTC(True), UnsignedintTC(1))
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result == TypeMismatch(Type.U8, Type.VOID, TEST_CONTEXT)
+    assert typecheck_result == TypeMismatch(Type.U8, Type.BOOL, TEST_CONTEXT)
 
 
 def test_addition_node_type_error_propagation_rhs():
@@ -95,11 +104,11 @@ def test_negation_node():
 
 
 def test_negation_node_type_mismatch():
-    ast = NegationTC(ProgramTC([]))
+    ast = NegationTC(BoolTC(True))
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result == TypeMismatch(Type.U8, Type.VOID, TEST_CONTEXT)
+    assert typecheck_result == TypeMismatch(Type.U8, Type.BOOL, TEST_CONTEXT)
 
 
 def test_print_node_type():

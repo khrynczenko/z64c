@@ -13,6 +13,7 @@ from z64c.ast import (
     Negation,
     Identifier,
     Unsignedint,
+    Bool,
 )
 from z64c.ast import AstVisitor
 from z64c.types import Type
@@ -143,3 +144,6 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
 
     def visitUnsignedint(self, node: Unsignedint) -> TypecheckResult:
         return Type.U8
+
+    def visitBool(self, node: Bool) -> TypecheckResult:
+        return Type.BOOL

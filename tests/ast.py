@@ -14,6 +14,7 @@ from z64c.ast import (
     Negation,
     Unsignedint,
     Identifier,
+    Bool,
 )
 from z64c.ast import SourceContext
 
@@ -27,3 +28,4 @@ AdditionTC = functools.partial(Addition, context=TEST_CONTEXT)
 NegationTC = functools.partial(Negation, context=TEST_CONTEXT)
 UnsignedintTC = functools.partial(Unsignedint, context=TEST_CONTEXT)
 IdentifierTC = functools.partial(Identifier, context=TEST_CONTEXT)
+BoolTC = functools.partial(Bool, context=TEST_CONTEXT)

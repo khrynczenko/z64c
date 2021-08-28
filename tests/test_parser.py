@@ -8,6 +8,7 @@ from tests.ast import (
     NegationTC,
     UnsignedintTC,
     IdentifierTC,
+    BoolTC,
 )
 from z64c.scanner import Token, TokenCategory
 from z64c.parser import Parser
@@ -53,6 +54,36 @@ def test_parsing_assignment_unsignedint():
     parser = Parser(tokens)
     ast = parser.parse()
     expected_ast = ProgramTC([AssignmentTC("x", UnsignedintTC(10))])
+    assert ast == expected_ast
+
+
+def test_parsing_assignment_bool_true():
+    tokens = [
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "x"),
+        make_arbitrary_token(TokenCategory.ASSIGN),
+        make_arbitrary_token(TokenCategory.TRUE),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+        make_arbitrary_token(TokenCategory.EOF),
+    ]
+
+    parser = Parser(tokens)
+    ast = parser.parse()
+    expected_ast = ProgramTC([AssignmentTC("x", BoolTC(True))])
+    assert ast == expected_ast
+
+
+def test_parsing_assignment_bool_false():
+    tokens = [
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "x"),
+        make_arbitrary_token(TokenCategory.ASSIGN),
+        make_arbitrary_token(TokenCategory.FALSE),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+        make_arbitrary_token(TokenCategory.EOF),
+    ]
+
+    parser = Parser(tokens)
+    ast = parser.parse()
+    expected_ast = ProgramTC([AssignmentTC("x", BoolTC(False))])
     assert ast == expected_ast
 
 

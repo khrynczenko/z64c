@@ -8,6 +8,7 @@ from z64c.ast import (
     Negation,
     Identifier,
     Unsignedint,
+    Bool,
 )
 from z64c.ast import AstVisitor, T
 
@@ -19,9 +20,9 @@ class Environment:
         self._variable_offsets = {}
 
     def add_variable(self, name: str):
-        self._variable_offsets[name] = -1
+        self._variable_offsets[name] = -2
         self._variable_offsets = {
-            key: offset + 1 for key, offset in self._variable_offsets.items()
+            key: offset + 2 for key, offset in self._variable_offsets.items()
         }
 
     def get_variable_offset(self, name: str) -> int:
@@ -102,3 +103,7 @@ class Z80CodegenVisitor(AstVisitor[None]):
 
     def visitUnsignedint(self, node: Unsignedint) -> None:
         print(f"{INDENTATION}ld a, {node._value}")
+
+    def visitBool(self, node: Bool) -> None:
+        value = 1 if node._value else 0
+        print(f"{INDENTATION}ld a, {value}")

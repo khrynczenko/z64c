@@ -19,6 +19,7 @@ Below is the language grammar.
 <factor> -> <atom>
 <atom> -> UNSIGNEDINT
 <atom> -> IDENTIFIER
+<atom> -> TRUE | FALSE
 """
 
 from typing import List
@@ -34,6 +35,7 @@ from z64c.ast import (
     Negation,
     Unsignedint,
     Identifier,
+    Bool,
 )
 
 
@@ -136,6 +138,11 @@ class Parser:
             context = self._make_context()
             self._advance()
             return Identifier(value, context)
+        elif self._current_token.category in [TokenCategory.TRUE, TokenCategory.FALSE]:
+            value = self._current_token.category is TokenCategory.TRUE
+            context = self._make_context()
+            self._advance()
+            return Bool(value, context)
         else:
             raise RuntimeError(
                 f"Unexpected token, expected one of "

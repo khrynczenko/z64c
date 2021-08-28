@@ -112,6 +112,28 @@ def test_scanner_produces_print_keyword():
     ]
 
 
+def test_scanner_produces_true_keyword():
+    source = "  true  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.TRUE, "true"),
+        Token(1, 9, TokenCategory.EOF, ""),
+    ]
+
+
+def test_scanner_produces_false_keyword():
+    source = "  false  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.FALSE, "false"),
+        Token(1, 10, TokenCategory.EOF, ""),
+    ]
+
+
 def test_scanner_produces_identifier():
     source = "  _identifier_  "
     scanner = Scanner(source)

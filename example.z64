@@ -1,2 +1,4 @@
-x = 1
+x = 3
+y = true
+z = false
 print(49 + x)

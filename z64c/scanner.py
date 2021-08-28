@@ -18,6 +18,8 @@ class TokenCategory(enum.Enum):
 
     # KEYWORDS
     PRINT = enum.auto()
+    TRUE = enum.auto()
+    FALSE = enum.auto()
 
     # PARENTHESES
     LEFT_PAREN = enum.auto()
@@ -34,7 +36,11 @@ class TokenCategory(enum.Enum):
     IDENTIFIER = enum.auto()
 
 
-KEYWORD_CATEGORIES = {"print": TokenCategory.PRINT}
+KEYWORD_CATEGORIES = {
+    "print": TokenCategory.PRINT,
+    "true": TokenCategory.TRUE,
+    "false": TokenCategory.FALSE,
+}
 
 
 @dataclasses.dataclass

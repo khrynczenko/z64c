@@ -30,6 +30,9 @@ class AstVisitor(ABC, Generic[T]):
     def visitUnsignedint(self, node: Unsignedint) -> T:
         pass
 
+    def visitBool(self, node: Bool) -> T:
+        pass
+
 
 class SourceContext:
     def __init__(self, line: int, column: int):
@@ -170,3 +173,15 @@ class Unsignedint(Ast):
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visitUnsignedint(self)
+
+
+class Bool(Ast):
+    def __init__(self, value: bool, context: SourceContext):
+        super().__init__(context)
+        self._value = value
+
+    def __eq__(self, rhs: Unsignedint) -> bool:
+        return self._value == rhs._value and self.context == self.context
+
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visitBool(self)
