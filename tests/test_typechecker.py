@@ -76,6 +76,22 @@ def test_addition_node_type_error_propagation_lhs():
     assert typecheck_result == UndefinedVariable("x", TEST_CONTEXT)
 
 
+def test_addition_node_type_mismatch_with_identifier():
+    ast = ProgramTC(
+        [
+            AssignmentTC("x", BoolTC(True)),
+            AdditionTC(IdentifierTC("x"), UnsignedintTC(1)),
+        ]
+    )
+
+    typecheck_result = ast.visit(TypecheckerVisitor())
+
+    expected_error = CombinedTypecheckErrors(
+        [TypeMismatch(Type.U8, Type.BOOL, TEST_CONTEXT)]
+    )
+    assert typecheck_result == expected_error
+
+
 def test_identifier_node_type():
     ast = IdentifierTC("x")
     environment = Environment()

@@ -85,7 +85,9 @@ TypecheckResult = Union[Type, TypecheckError]
 
 
 class TypecheckerVisitor(AstVisitor[TypecheckResult]):
-    def __init__(self, environment: Environment = Environment()):
+    def __init__(self, environment: Environment = None):
+        if environment is None:
+            environment = Environment()
         self._environment = environment
 
     def visitProgram(self, node: Program) -> TypecheckResult:
@@ -107,7 +109,11 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
         return Type.VOID
 
     def visitAssigment(self, node: Assignment) -> TypecheckResult:
-        self._environment.add_variable(node.name, Type.U8)
+        rhs_check_result = node.rhs.visit(self)
+        if isinstance(rhs_check_result, TypecheckError):
+            return rhs_check_result
+
+        self._environment.add_variable(node.name, rhs_check_result)
         return Type.VOID
 
     def visitAddition(self, node: Addition) -> TypecheckResult:
