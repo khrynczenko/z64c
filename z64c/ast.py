@@ -9,28 +9,28 @@ T = TypeVar("T")
 
 
 class AstVisitor(ABC, Generic[T]):
-    def visitProgram(self, node: Program) -> T:
+    def visit_program(self, node: Program) -> T:
         pass
 
-    def visitPrint(self, node: Print) -> T:
+    def visit_print(self, node: Print) -> T:
         pass
 
-    def visitAssigment(self, node: Assignment) -> T:
+    def visit_assignment(self, node: Assignment) -> T:
         pass
 
-    def visitAddition(self, node: Addition) -> T:
+    def visit_addition(self, node: Addition) -> T:
         pass
 
-    def visitNegation(self, node: Negation) -> T:
+    def visit_negation(self, node: Negation) -> T:
         pass
 
-    def visitIdentifier(self, node: Identifier) -> T:
+    def visit_identifier(self, node: Identifier) -> T:
         pass
 
-    def visitUnsignedint(self, node: Unsignedint) -> T:
+    def visit_unsignedint(self, node: Unsignedint) -> T:
         pass
 
-    def visitBool(self, node: Bool) -> T:
+    def visit_bool(self, node: Bool) -> T:
         pass
 
 
@@ -78,7 +78,7 @@ class SjasmplusSnapshotProgram(Ast):
         return self.program == rhs.program and self.source_name == rhs._source_name
 
     def visit(self, v: AstVisitor[T]) -> T:
-        return v.visitProgram(self)
+        return v.visit_program(self)
 
 
 class Program(Ast):
@@ -90,7 +90,7 @@ class Program(Ast):
         return self.statements == rhs.statements and self.context == rhs.context
 
     def visit(self, v: AstVisitor[T]) -> T:
-        return v.visitProgram(self)
+        return v.visit_program(self)
 
 
 class Print(Ast):
@@ -102,7 +102,7 @@ class Print(Ast):
         return self.expression == rhs.expression and self.context == rhs.context
 
     def visit(self, v: AstVisitor[T]) -> T:
-        return v.visitPrint(self)
+        return v.visit_print(self)
 
 
 class Assignment(Ast):
@@ -119,7 +119,7 @@ class Assignment(Ast):
         )
 
     def visit(self, v: AstVisitor[T]) -> T:
-        return v.visitAssigment(self)
+        return v.visit_assignment(self)
 
 
 class Addition(Ast):
@@ -134,7 +134,7 @@ class Addition(Ast):
         )
 
     def visit(self, v: AstVisitor[T]) -> T:
-        return v.visitAddition(self)
+        return v.visit_addition(self)
 
 
 class Negation(Ast):
@@ -146,7 +146,7 @@ class Negation(Ast):
         return self.expression == rhs.expression and self.context == rhs.context
 
     def visit(self, v: AstVisitor[T]) -> T:
-        return v.visitNegation(self)
+        return v.visit_negation(self)
 
 
 class Identifier(Ast):
@@ -158,7 +158,7 @@ class Identifier(Ast):
         return self.value == rhs.value and self.context == self.context
 
     def visit(self, v: AstVisitor[T]) -> T:
-        return v.visitIdentifier(self)
+        return v.visit_identifier(self)
 
 
 class Unsignedint(Ast):
@@ -170,7 +170,7 @@ class Unsignedint(Ast):
         return self.value == rhs.value and self.context == self.context
 
     def visit(self, v: AstVisitor[T]) -> T:
-        return v.visitUnsignedint(self)
+        return v.visit_unsignedint(self)
 
 
 class Bool(Ast):
@@ -182,4 +182,4 @@ class Bool(Ast):
         return self.value == rhs.value and self.context == self.context
 
     def visit(self, v: AstVisitor[T]) -> T:
-        return v.visitBool(self)
+        return v.visit_bool(self)

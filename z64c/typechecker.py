@@ -90,7 +90,7 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
             environment = Environment()
         self._environment = environment
 
-    def visitProgram(self, node: Program) -> TypecheckResult:
+    def visit_program(self, node: Program) -> TypecheckResult:
         checks: TypecheckResult = []
         for statement in node.statements:
             checks.append(statement.visit(self))
@@ -101,14 +101,14 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
 
         return Type.VOID
 
-    def visitPrint(self, node: Print) -> TypecheckResult:
+    def visit_print(self, node: Print) -> TypecheckResult:
         check_result = node.expression.visit(self)
         if isinstance(check_result, TypecheckError):
             return check_result
 
         return Type.VOID
 
-    def visitAssigment(self, node: Assignment) -> TypecheckResult:
+    def visit_assignment(self, node: Assignment) -> TypecheckResult:
         rhs_check_result = node.rhs.visit(self)
         if isinstance(rhs_check_result, TypecheckError):
             return rhs_check_result
@@ -116,7 +116,7 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
         self._environment.add_variable(node.name, rhs_check_result)
         return Type.VOID
 
-    def visitAddition(self, node: Addition) -> TypecheckResult:
+    def visit_addition(self, node: Addition) -> TypecheckResult:
         lhs_check_result = node.lhs.visit(self)
         rhs_check_result = node.rhs.visit(self)
 
@@ -134,7 +134,7 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
 
         return Type.U8
 
-    def visitNegation(self, node: Negation) -> TypecheckResult:
+    def visit_negation(self, node: Negation) -> TypecheckResult:
         check_result = node.expression.visit(self)
 
         if isinstance(check_result, TypecheckError):
@@ -145,11 +145,11 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
 
         return check_result
 
-    def visitIdentifier(self, node: Identifier) -> TypecheckResult:
+    def visit_identifier(self, node: Identifier) -> TypecheckResult:
         return self._environment.get_variable_type(node.value, node.context)
 
-    def visitUnsignedint(self, node: Unsignedint) -> TypecheckResult:
+    def visit_unsignedint(self, node: Unsignedint) -> TypecheckResult:
         return Type.U8
 
-    def visitBool(self, node: Bool) -> TypecheckResult:
+    def visit_bool(self, node: Bool) -> TypecheckResult:
         return Type.BOOL
