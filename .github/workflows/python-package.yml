@@ -29,11 +29,11 @@ jobs:
         python -m pip install -r dev-requirements.txt
     - name: Lint with flake8
       run: |
-        flake8 z64c tests
+        flake8 zx64c tests
     - name: Test with pytest
       run: |
         pytest
     - name: Check formating
       run: |
-        black --check z64c tests
+        black --check zx64c tests
 
