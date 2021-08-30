@@ -44,19 +44,15 @@ class SjasmplusSnapshotVisitor(AstVisitor[None]):
         self._codegen.visit_print(node)
 
     def visit_assignment(self, node: Assignment) -> None:
-        pass
         self._codegen.visit_assignment(node)
 
     def visit_addition(self, node: Addition) -> None:
-        pass
         self._codegen.visit_addition(node)
 
     def visit_negation(self, node: Negation) -> None:
-        pass
         self._codegen.visit_negation(node)
 
     def visit_identifier(self, node: Identifier) -> None:
-        pass
         self._codegen.visit_identifier(node)
 
     def visit_unsignedint(self, node: Unsignedint) -> None:
@@ -71,39 +67,39 @@ class Z80CodegenVisitor(AstVisitor[None]):
         print(f"{INDENTATION}org $8000")
         print("")
         print("start:")
-        for statement in node._statements:
+        for statement in node.statements:
             statement.visit(self)
         print(f"{INDENTATION}ret")
 
     def visit_print(self, node: Print) -> T:
-        node._expression.visit(self)
+        node.expression.visit(self)
         print(f"{INDENTATION}rst $10")
 
     def visit_assignment(self, node: Assignment) -> None:
-        node._rhs.visit(self)
-        self._environment.add_variable(node._name)
+        node.rhs.visit(self)
+        self._environment.add_variable(node.name)
         print(f"{INDENTATION}push af")
 
     def visit_addition(self, node: Addition) -> None:
-        node._lhs.visit(self)
+        node.lhs.visit(self)
         print(f"{INDENTATION}ld b, a")
-        node._rhs.visit(self)
+        node.rhs.visit(self)
         print(f"{INDENTATION}adc a, b")
 
     def visit_negation(self, node: Negation) -> None:
-        node._expression.visit(self)
+        node.expression.visit(self)
         print(f"{INDENTATION}neg")
 
     def visit_identifier(self, node: Identifier) -> None:
-        offset = self._environment.get_variable_offset(node._value)
+        offset = self._environment.get_variable_offset(node.value)
         print(f"{INDENTATION}ld hl, $00")
         print(f"{INDENTATION}add hl, sp")
         print(f"{INDENTATION}ld ix, hl")
         print(f"{INDENTATION}ld a, (ix + {offset + 1})")
 
     def visit_unsignedint(self, node: Unsignedint) -> None:
-        print(f"{INDENTATION}ld a, {node._value}")
+        print(f"{INDENTATION}ld a, {node.value}")
 
     def visit_bool(self, node: Bool) -> None:
-        value = 1 if node._value else 0
+        value = 1 if node.value else 0
         print(f"{INDENTATION}ld a, {value}")
