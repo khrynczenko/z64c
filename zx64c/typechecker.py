@@ -4,7 +4,7 @@ import abc
 from abc import ABC
 from typing import Union
 
-from z64c.ast import (
+from zx64c.ast import (
     SourceContext,
     Program,
     Print,
@@ -15,8 +15,8 @@ from z64c.ast import (
     Unsignedint,
     Bool,
 )
-from z64c.ast import AstVisitor
-from z64c.types import Type
+from zx64c.ast import AstVisitor
+from zx64c.types import Type
 
 
 class Environment:

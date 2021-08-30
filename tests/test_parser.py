@@ -10,8 +10,8 @@ from tests.ast import (
     IdentifierTC,
     BoolTC,
 )
-from z64c.scanner import Token, TokenCategory
-from z64c.parser import Parser
+from zx64c.scanner import Token, TokenCategory
+from zx64c.parser import Parser
 
 
 def build_test_tokens_from_categories(categories: List[TokenCategory]):

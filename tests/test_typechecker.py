@@ -1,4 +1,4 @@
-from z64c.ast import SourceContext, Identifier
+from zx64c.ast import SourceContext, Identifier
 from tests.ast import (
     TEST_CONTEXT,
     ProgramTC,
@@ -10,7 +10,7 @@ from tests.ast import (
     IdentifierTC,
     BoolTC,
 )
-from z64c.typechecker import (
+from zx64c.typechecker import (
     TypecheckerVisitor,
     Environment,
     Type,

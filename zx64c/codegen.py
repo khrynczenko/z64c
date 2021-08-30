@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from z64c.ast import (
+from zx64c.ast import (
     Program,
     Print,
     Assignment,
@@ -10,7 +10,7 @@ from z64c.ast import (
     Unsignedint,
     Bool,
 )
-from z64c.ast import AstVisitor, T
+from zx64c.ast import AstVisitor, T
 
 INDENTATION = "    "
 

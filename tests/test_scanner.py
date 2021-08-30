@@ -1,4 +1,4 @@
-from z64c.scanner import Scanner, Token, TokenCategory
+from zx64c.scanner import Scanner, Token, TokenCategory
 
 
 def test_scanner_produces_newline():

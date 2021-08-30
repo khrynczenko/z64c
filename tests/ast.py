@@ -6,7 +6,7 @@ do not care about node context.
 
 import functools
 
-from z64c.ast import (
+from zx64c.ast import (
     Program,
     Print,
     Assignment,
@@ -16,7 +16,7 @@ from z64c.ast import (
     Identifier,
     Bool,
 )
-from z64c.ast import SourceContext
+from zx64c.ast import SourceContext
 
 TEST_CONTEXT = SourceContext(0, 0)
 

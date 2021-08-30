@@ -24,8 +24,8 @@ Below is the language grammar.
 
 from typing import List
 
-from z64c.scanner import Token, TokenCategory
-from z64c.ast import (
+from zx64c.scanner import Token, TokenCategory
+from zx64c.ast import (
     SourceContext,
     Ast,
     Program,
