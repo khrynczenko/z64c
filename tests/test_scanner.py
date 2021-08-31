@@ -2,23 +2,23 @@ from zx64c.scanner import Scanner, Token, TokenCategory
 
 
 def test_scanner_produces_newline():
-    source = "  \n  "
+    source = "\n"
     scanner = Scanner(source)
     tokens = scanner.scan()
 
     assert tokens == [
-        Token(1, 3, TokenCategory.NEWLINE, "\n"),
-        Token(2, 3, TokenCategory.EOF, ""),
+        Token(1, 1, TokenCategory.NEWLINE, "\n"),
+        Token(2, 1, TokenCategory.EOF, ""),
     ]
 
 
 def test_scanner_produces_token_after_a_newline():
-    source = "  \n123"
+    source = "\n123"
     scanner = Scanner(source)
     tokens = scanner.scan()
 
     assert tokens == [
-        Token(1, 3, TokenCategory.NEWLINE, "\n"),
+        Token(1, 1, TokenCategory.NEWLINE, "\n"),
         Token(2, 1, TokenCategory.UNSIGNEDINT, "123"),
         Token(2, 4, TokenCategory.EOF, ""),
     ]
@@ -175,4 +175,59 @@ def test_scanner_has_right_token_locations_for_two_line_program():
         Token(2, 11, TokenCategory.IDENTIFIER, "y"),
         Token(2, 12, TokenCategory.RIGHT_PAREN, ")"),
         Token(2, 13, TokenCategory.EOF, ""),
+    ]
+
+
+def test_scanner_idents_and_dedents():
+    source = "\n    1\n"
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+    print(tokens)
+
+    assert tokens == [
+        Token(1, 1, TokenCategory.NEWLINE, "\n"),
+        Token(2, 1, TokenCategory.INDENT, "    "),
+        Token(2, 5, TokenCategory.UNSIGNEDINT, "1"),
+        Token(2, 6, TokenCategory.NEWLINE, "\n"),
+        Token(3, 1, TokenCategory.DEDENT, "    "),
+        Token(3, 1, TokenCategory.EOF, ""),
+    ]
+
+
+def test_scanner_with_nested_idents_and_dedents():
+    source = "\n    1\n        \n"
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+    print(tokens)
+
+    assert tokens == [
+        Token(1, 1, TokenCategory.NEWLINE, "\n"),
+        Token(2, 1, TokenCategory.INDENT, "    "),
+        Token(2, 5, TokenCategory.UNSIGNEDINT, "1"),
+        Token(2, 6, TokenCategory.NEWLINE, "\n"),
+        Token(3, 1, TokenCategory.INDENT, "    "),
+        Token(3, 9, TokenCategory.NEWLINE, "\n"),
+        Token(4, 1, TokenCategory.DEDENT, "    "),
+        Token(4, 1, TokenCategory.DEDENT, "    "),
+        Token(4, 1, TokenCategory.EOF, ""),
+    ]
+
+
+def test_scanner_with_nested_idents_and_nested_dedents():
+    source = "\n    1\n        \n    \n"
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+    print(tokens)
+
+    assert tokens == [
+        Token(1, 1, TokenCategory.NEWLINE, "\n"),
+        Token(2, 1, TokenCategory.INDENT, "    "),
+        Token(2, 5, TokenCategory.UNSIGNEDINT, "1"),
+        Token(2, 6, TokenCategory.NEWLINE, "\n"),
+        Token(3, 1, TokenCategory.INDENT, "    "),
+        Token(3, 9, TokenCategory.NEWLINE, "\n"),
+        Token(4, 1, TokenCategory.DEDENT, "    "),
+        Token(4, 5, TokenCategory.NEWLINE, "\n"),
+        Token(5, 1, TokenCategory.DEDENT, "    "),
+        Token(5, 1, TokenCategory.EOF, ""),
     ]

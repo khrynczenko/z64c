@@ -15,6 +15,8 @@ class TokenCategory(enum.Enum):
     # SIGNIFICANT WHITESPACE
     EOF = enum.auto()
     NEWLINE = enum.auto()
+    INDENT = enum.auto()
+    DEDENT = enum.auto()
 
     # KEYWORDS
     PRINT = enum.auto()
@@ -58,6 +60,7 @@ class Scanner:
         self._line = 1
         self._column = 1
         self._produced_tokens = []
+        self._indent_level = 0
 
     def scan(self) -> List[Token]:
         while self._source_index < len(self._source):
@@ -70,6 +73,7 @@ class Scanner:
                 self._produced_tokens.append(
                     self._consume_one_character_symbol("\n", TokenCategory.NEWLINE)
                 )
+                self._produced_tokens.extend(self._consume_possible_indentations())
 
             elif remaining_source.startswith("("):
                 self._produced_tokens.append(
@@ -138,6 +142,10 @@ class Scanner:
             )
         )
 
+    def _advance_many(self, count):
+        for i in range(count):
+            self._advance()
+
     def _advance(self):
         if self._source[self._source_index] == "\n":
             self._line += 1
@@ -145,6 +153,45 @@ class Scanner:
 
         self._column += 1
         self._source_index += 1
+
+    def _consume_possible_indentations(self):
+        idents = []
+        new_indent_level = self._count_indentations()
+
+        if self._indent_level < new_indent_level:
+            for _ in range(new_indent_level - self._indent_level):
+                idents.append(
+                    Token(self._line, self._column, TokenCategory.INDENT, "    ")
+                )
+        else:
+            for _ in range(self._indent_level - new_indent_level):
+                idents.append(
+                    Token(self._line, self._column, TokenCategory.DEDENT, "    ")
+                )
+
+        self._advance_many(new_indent_level * 4)
+        self._indent_level = new_indent_level
+        return idents
+
+    def _count_indentations(self):
+        space_count = len(
+            list(
+                itertools.takewhile(
+                    lambda s: s == " ", self._source[self._source_index :]
+                )
+            )
+        )
+        if space_count == 0:
+            return 0
+
+        if space_count % 4 != 0:
+            raise RuntimeError(
+                "The only whitespace that is allowed at the beginning of a line "
+                "is one or more indentations and each must be made of four spaces."
+                "Whitespace count at line {self._line} is {space_count} which "
+                "is not a multiple of 4"
+            )
+        return space_count // 4
 
     def _consume_one_character_symbol(self, character: str, category: TokenCategory):
         token = Token(self._line, self._column, category, character)
