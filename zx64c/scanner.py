@@ -155,23 +155,25 @@ class Scanner:
         self._source_index += 1
 
     def _consume_possible_indentations(self):
-        idents = []
+        indents = []
         new_indent_level = self._count_indentations()
 
         if self._indent_level < new_indent_level:
+            # new indent level is higher so we add INDENT tokens
             for _ in range(new_indent_level - self._indent_level):
-                idents.append(
+                indents.append(
                     Token(self._line, self._column, TokenCategory.INDENT, "    ")
                 )
         else:
             for _ in range(self._indent_level - new_indent_level):
-                idents.append(
+                # new indent level is lower so we add DEDENT tokens
+                indents.append(
                     Token(self._line, self._column, TokenCategory.DEDENT, "    ")
                 )
 
         self._advance_many(new_indent_level * 4)
         self._indent_level = new_indent_level
-        return idents
+        return indents
 
     def _count_indentations(self):
         space_count = len(
