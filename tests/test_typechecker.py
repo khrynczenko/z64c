@@ -1,3 +1,5 @@
+import pytest
+
 from zx64c.ast import SourceContext, Identifier
 from tests.ast import (
     TEST_CONTEXT,
@@ -44,32 +46,27 @@ def test_addition_node_type():
     assert typecheck_result is Type.U8
 
 
-def test_addition_node_type_mismatch_rhs():
-    ast = AdditionTC(UnsignedintTC(1), BoolTC(True))
+@pytest.mark.parametrize(
+    "lhs_node, rhs_node, expected_type, got_type",
+    [
+        (BoolTC(True), UnsignedintTC(1), Type.U8, Type.BOOL),
+        (UnsignedintTC(1), BoolTC(True), Type.U8, Type.BOOL),
+    ],
+)
+def test_addition_node_type_mismatch(lhs_node, rhs_node, expected_type, got_type):
+    ast = AdditionTC(lhs_node, rhs_node)
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result == TypeMismatch(Type.U8, Type.BOOL, TEST_CONTEXT)
+    assert typecheck_result == TypeMismatch(expected_type, got_type, TEST_CONTEXT)
 
 
-def test_addition_node_type_mismatch_lhs():
-    ast = AdditionTC(BoolTC(True), UnsignedintTC(1))
-
-    typecheck_result = ast.visit(TypecheckerVisitor())
-
-    assert typecheck_result == TypeMismatch(Type.U8, Type.BOOL, TEST_CONTEXT)
-
-
-def test_addition_node_type_error_propagation_rhs():
-    ast = AdditionTC(UnsignedintTC(1), IdentifierTC("x"))
-
-    typecheck_result = ast.visit(TypecheckerVisitor())
-
-    assert typecheck_result == UndefinedVariable("x", TEST_CONTEXT)
-
-
-def test_addition_node_type_error_propagation_lhs():
-    ast = AdditionTC(IdentifierTC("x"), UnsignedintTC(1))
+@pytest.mark.parametrize(
+    "lhs_node, rhs_node",
+    [(IdentifierTC("x"), UnsignedintTC(1)), (UnsignedintTC(1), IdentifierTC("x"))],
+)
+def test_addition_node_type_error_propagates(lhs_node, rhs_node):
+    ast = AdditionTC(lhs_node, rhs_node)
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
