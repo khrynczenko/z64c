@@ -24,6 +24,8 @@ class TokenCategory(enum.Enum):
     FALSE = enum.auto()
     IF = enum.auto()
 
+    COLON = enum.auto()
+
     # PARENTHESES
     LEFT_PAREN = enum.auto()
     RIGHT_PAREN = enum.auto()
@@ -105,6 +107,11 @@ class Scanner:
             elif remaining_source.startswith("="):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol("=", TokenCategory.ASSIGN)
+                )
+
+            elif remaining_source.startswith(":"):
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol(":", TokenCategory.COLON)
                 )
 
             elif remaining_source[0].isdigit():

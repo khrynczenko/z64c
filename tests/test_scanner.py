@@ -90,6 +90,17 @@ def test_scanner_produces_assign():
     ]
 
 
+def test_scanner_produces_colon():
+    source = "  :  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.COLON, ":"),
+        Token(1, 6, TokenCategory.EOF, ""),
+    ]
+
+
 def test_scanner_produces_unsignedint():
     source = "  123  "
     scanner = Scanner(source)
