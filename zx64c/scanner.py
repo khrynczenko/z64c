@@ -22,6 +22,7 @@ class TokenCategory(enum.Enum):
     PRINT = enum.auto()
     TRUE = enum.auto()
     FALSE = enum.auto()
+    IF = enum.auto()
 
     # PARENTHESES
     LEFT_PAREN = enum.auto()
@@ -42,6 +43,7 @@ KEYWORD_CATEGORIES = {
     "print": TokenCategory.PRINT,
     "true": TokenCategory.TRUE,
     "false": TokenCategory.FALSE,
+    "if": TokenCategory.IF,
 }
 
 

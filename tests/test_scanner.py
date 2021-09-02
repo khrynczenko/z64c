@@ -145,6 +145,17 @@ def test_scanner_produces_identifier():
     ]
 
 
+def test_scanner_produces_if():
+    source = "  if  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.IF, "if"),
+        Token(1, 7, TokenCategory.EOF, ""),
+    ]
+
+
 def test_scanner_produces_binary_addition():
     source = "  12 + 34"
     scanner = Scanner(source)
