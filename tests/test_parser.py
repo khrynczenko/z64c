@@ -2,6 +2,8 @@ from typing import List
 
 from tests.ast import (
     ProgramTC,
+    BlockTC,
+    IfTC,
     PrintTC,
     AssignmentTC,
     AdditionTC,
@@ -164,4 +166,24 @@ def test_parsing_assignment_complex_arithmetic_expression():
             )
         ]
     )
+    assert ast == expected_ast
+
+
+def test_parsing_if_statement():
+    tokens = [
+        make_arbitrary_token(TokenCategory.IF),
+        make_arbitrary_token(TokenCategory.TRUE),
+        make_arbitrary_token(TokenCategory.COLON),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+        make_arbitrary_token(TokenCategory.INDENT),
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "y"),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+        make_arbitrary_token(TokenCategory.DEDENT),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+        make_arbitrary_token(TokenCategory.EOF),
+    ]
+
+    parser = Parser(tokens)
+    ast = parser.parse()
+    expected_ast = ProgramTC([IfTC(BoolTC(True), BlockTC([IdentifierTC("y")]))])
     assert ast == expected_ast

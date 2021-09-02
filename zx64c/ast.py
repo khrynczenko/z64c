@@ -93,6 +93,31 @@ class Program(Ast):
         return v.visit_program(self)
 
 
+class Block(Ast):
+    def __init__(self, statements: [Ast], context: SourceContext):
+        super().__init__(context)
+        self.statements = statements
+
+    def __eq__(self, rhs: If) -> bool:
+        return self.statements == rhs.statements
+
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visit_block(self)
+
+
+class If(Ast):
+    def __init__(self, condition: Ast, consequence: Ast, context: SourceContext):
+        super().__init__(context)
+        self.condition = condition
+        self.consequence = consequence
+
+    def __eq__(self, rhs: If) -> bool:
+        return self.condition == rhs.condition and self.consequence == rhs.consequence
+
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visit_if(self)
+
+
 class Print(Ast):
     def __init__(self, expression: Ast, context: SourceContext):
         super().__init__(context)

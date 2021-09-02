@@ -7,8 +7,12 @@ Below is the language grammar.
 
 <program> -> <statement>* EOF
 <statement> -> <simple_statement> NEWLINE
+<statement> -> <compount_statement> NEWLINE
 <simple_statement> -> <print>
 <simple_statement> -> <assignment>
+<compound_statement> -> <if>
+<if> -> IF <expression> COLON NEWLINE <block>
+<block> INDENT <statement>* DEDENT
 <print> -> PRINT LEFT_PAREN <expression> RIGHT_PAREN
 <assignment> -> IDENTIFIER ASSIGN <expression>
 <expression> -> <term> (PLUS <term>)*
@@ -29,6 +33,8 @@ from zx64c.ast import (
     SourceContext,
     Ast,
     Program,
+    Block,
+    If,
     Print,
     Assignment,
     Addition,
@@ -74,14 +80,48 @@ class Parser:
         return Program(statements, context)
 
     def _parse_statement(self) -> Ast:
+        if self._current_token.category in [TokenCategory.IF]:
+            return self._parse_compound_statement()
+        else:
+            return self._parse_simple_statement()
+
+    def _parse_simple_statement(self) -> Ast:
+        categories = [tok.category for tok in self._tokens]
         if self._current_token.category is TokenCategory.PRINT:
             print_statement = self._parse_print()
             self._consume(TokenCategory.NEWLINE)
             return print_statement
-        else:
+        elif categories[:2] == [TokenCategory.IDENTIFIER, TokenCategory.ASSIGN]:
             assignment_statement = self._parse_assignment()
             self._consume(TokenCategory.NEWLINE)
             return assignment_statement
+        else:
+            expression = self._parse_expression()
+            self._consume(TokenCategory.NEWLINE)
+            return expression
+
+    def _parse_compound_statement(self) -> Ast:
+        if_statement = self._parse_if()
+        self._consume(TokenCategory.NEWLINE)
+        return if_statement
+
+    def _parse_if(self) -> Ast:
+        context = self._make_context()
+        self._consume(TokenCategory.IF)
+        condition = self._parse_expression()
+        self._consume(TokenCategory.COLON)
+        self._consume(TokenCategory.NEWLINE)
+        consequence = self._parse_block()
+        return If(condition, consequence, context)
+
+    def _parse_block(self) -> Ast:
+        context = self._make_context()
+        statements = []
+        self._consume(TokenCategory.INDENT)
+        while self._current_token.category is not TokenCategory.DEDENT:
+            statements.append(self._parse_statement())
+        self._consume(TokenCategory.DEDENT)
+        return Block(statements, context)
 
     def _parse_print(self) -> Ast:
         context = self._make_context()
