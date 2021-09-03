@@ -12,6 +12,12 @@ class AstVisitor(ABC, Generic[T]):
     def visit_program(self, node: Program) -> T:
         pass
 
+    def visit_block(self, node: Block) -> T:
+        pass
+
+    def visit_if(self, node: Block) -> T:
+        pass
+
     def visit_print(self, node: Print) -> T:
         pass
 

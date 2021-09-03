@@ -4,6 +4,8 @@ from zx64c.ast import SourceContext, Identifier
 from tests.ast import (
     TEST_CONTEXT,
     ProgramTC,
+    BlockTC,
+    IfTC,
     PrintTC,
     AssignmentTC,
     AdditionTC,
@@ -158,3 +160,39 @@ def test_program_node_type_with_errors():
     assert typecheck_result == CombinedTypecheckErrors(
         [UndefinedVariable("y", context)]
     )
+
+
+def test_block_node_type():
+    ast = BlockTC([AssignmentTC("x", UnsignedintTC(1)), PrintTC(UnsignedintTC(1))])
+
+    typecheck_result = ast.visit(TypecheckerVisitor())
+
+    assert typecheck_result is Type.VOID
+
+
+def test_block_node_type_combines_errors():
+    context = SourceContext(1, 5)
+    identifier = Identifier("undefined", context)
+    ast = BlockTC([AssignmentTC("x", UnsignedintTC(1)), PrintTC(identifier)])
+
+    typecheck_result = ast.visit(TypecheckerVisitor())
+
+    assert typecheck_result == CombinedTypecheckErrors(
+        [UndefinedVariable("undefined", context)]
+    )
+
+
+def test_if_node_type():
+    ast = IfTC(BoolTC(True), AssignmentTC("x", UnsignedintTC(1)))
+
+    typecheck_result = ast.visit(TypecheckerVisitor())
+
+    assert typecheck_result is Type.VOID
+
+
+def test_if_node_type_mismatches_on_not_bool():
+    ast = IfTC(UnsignedintTC(1), AssignmentTC("x", UnsignedintTC(1)))
+
+    typecheck_result = ast.visit(TypecheckerVisitor())
+
+    assert typecheck_result == TypeMismatch(Type.BOOL, Type.U8, TEST_CONTEXT)

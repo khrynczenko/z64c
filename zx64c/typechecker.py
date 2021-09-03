@@ -7,6 +7,8 @@ from typing import Union
 from zx64c.ast import (
     SourceContext,
     Program,
+    Block,
+    If,
     Print,
     Assignment,
     Addition,
@@ -99,6 +101,23 @@ class TypecheckerVisitor(AstVisitor[TypecheckResult]):
         if errors:
             return CombinedTypecheckErrors(errors)
 
+        return Type.VOID
+
+    def visit_block(self, node: Block) -> TypecheckResult:
+        checks: TypecheckResult = []
+        for statement in node.statements:
+            checks.append(statement.visit(self))
+
+        errors = [error for error in checks if isinstance(error, TypecheckError)]
+        if errors:
+            return CombinedTypecheckErrors(errors)
+
+        return Type.VOID
+
+    def visit_if(self, node: If) -> TypecheckResult:
+        condition_type = node.condition.visit(self)
+        if condition_type is not Type.BOOL:
+            return TypeMismatch(Type.BOOL, condition_type, node.condition.context)
         return Type.VOID
 
     def visit_print(self, node: Print) -> TypecheckResult:
