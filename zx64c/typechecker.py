@@ -27,6 +27,9 @@ class Environment:
     def add_variable(self, name: str, variable_type: Type):
         self._variable_types[name] = variable_type
 
+    def has_variable(self, name):
+        return name in self._variable_types
+
     def get_variable_type(self, name: str, context: SourceContext) -> Type:
         """
         :param context: used to create error in case the variable is not defined
@@ -125,6 +128,8 @@ class TypecheckerVisitor(AstVisitor[Type]):
         if condition_type is not Type.BOOL:
             raise TypeMismatch(Type.BOOL, condition_type, node.condition.context)
 
+        node.consequence.visit(self)
+
         return Type.VOID
 
     def visit_print(self, node: Print) -> Type:
@@ -135,7 +140,13 @@ class TypecheckerVisitor(AstVisitor[Type]):
     def visit_assignment(self, node: Assignment) -> Type:
         rhs_type = node.rhs.visit(self)
 
-        self._environment.add_variable(node.name, rhs_type)
+        if not self._environment.has_variable(node.name):
+            self._environment.add_variable(node.name, rhs_type)
+
+        variable_type = self._environment.get_variable_type(node.name, node.context)
+        if variable_type is not rhs_type:
+            raise TypeMismatch(variable_type, rhs_type, node.context)
+
         return Type.VOID
 
     def visit_addition(self, node: Addition) -> Type:

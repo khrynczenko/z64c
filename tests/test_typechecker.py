@@ -160,6 +160,41 @@ def test_assignment_node_type():
     assert typecheck_result is Type.VOID
 
 
+def test_assignment_node_raises_mismatch():
+    ast = ProgramTC(
+        [AssignmentTC("x", UnsignedintTC(1)), AssignmentTC("x", BoolTC(True))]
+    )
+
+    try:
+        ast.visit(TypecheckerVisitor())
+    except CombinedTypecheckError as e:
+        assert e == CombinedTypecheckError(
+            [TypeMismatch(Type.U8, Type.BOOL, TEST_CONTEXT)]
+        )
+        return
+
+    assert False, "Expected type error exception not raised"
+
+
+def test_assignment_node_raises_in_if_mismatch():
+    ast = ProgramTC(
+        [
+            AssignmentTC("x", UnsignedintTC(1)),
+            IfTC(BoolTC(True), AssignmentTC("x", BoolTC(True))),
+        ]
+    )
+
+    try:
+        ast.visit(TypecheckerVisitor())
+    except CombinedTypecheckError as e:
+        assert e == CombinedTypecheckError(
+            [TypeMismatch(Type.U8, Type.BOOL, TEST_CONTEXT)]
+        )
+        return
+
+    assert False, "Expected type error exception not raised"
+
+
 def test_program_node_type():
     ast = ProgramTC([AssignmentTC("x", UnsignedintTC(1))])
 
