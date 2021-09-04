@@ -11,9 +11,10 @@ from tests.ast import (
     UnsignedintTC,
     IdentifierTC,
     BoolTC,
+    TEST_CONTEXT,
 )
 from zx64c.scanner import Token, TokenCategory
-from zx64c.parser import Parser
+from zx64c.parser import Parser, UnexpectedToken
 
 
 def build_test_tokens_from_categories(categories: List[TokenCategory]):
@@ -187,3 +188,24 @@ def test_parsing_if_statement():
     ast = parser.parse()
     expected_ast = ProgramTC([IfTC(BoolTC(True), BlockTC([IdentifierTC("y")]))])
     assert ast == expected_ast
+
+
+def test_parser_raises_on_unexpected_token():
+    tokens = [
+        make_arbitrary_token(TokenCategory.IF),
+        make_arbitrary_token(TokenCategory.TRUE),
+        make_arbitrary_token(TokenCategory.COLON),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+        make_arbitrary_token(TokenCategory.IDENTIFIER),
+    ]
+
+    parser = Parser(tokens)
+    try:
+        parser.parse()
+    except UnexpectedToken as e:
+        assert e == UnexpectedToken(
+            [TokenCategory.INDENT], TokenCategory.IDENTIFIER, TEST_CONTEXT
+        )
+        return
+
+    assert False, "Expected exception not raised"

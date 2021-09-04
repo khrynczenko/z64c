@@ -44,6 +44,28 @@ class TokenCategory(enum.Enum):
     UNSIGNEDINT = enum.auto()
     IDENTIFIER = enum.auto()
 
+    def __str__(self):
+        str_map = {
+            TokenCategory.EOF: "EOF",
+            TokenCategory.NEWLINE: "\n",
+            TokenCategory.INDENT: "INDENT",
+            TokenCategory.DEDENT: "DEDENT",
+            TokenCategory.PRINT: "print",
+            TokenCategory.TRUE: "true",
+            TokenCategory.FALSE: "false",
+            TokenCategory.IF: "if",
+            TokenCategory.COLON: ":",
+            TokenCategory.LEFT_PAREN: "(",
+            TokenCategory.RIGHT_PAREN: ")",
+            TokenCategory.PLUS: "+",
+            TokenCategory.MINUS: "-",
+            TokenCategory.EQUAL: "==",
+            TokenCategory.ASSIGN: "=",
+            TokenCategory.UNSIGNEDINT: "<decimal>",
+            TokenCategory.IDENTIFIER: "<identifier>",
+        }
+        return str_map[self]
+
 
 KEYWORD_CATEGORIES = {
     "print": TokenCategory.PRINT,

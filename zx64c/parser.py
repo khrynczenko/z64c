@@ -25,7 +25,10 @@ Below is the language grammar.
 <atom> -> IDENTIFIER
 <atom> -> TRUE | FALSE
 """
+from __future__ import annotations
 
+import abc
+from abc import ABC
 from typing import List
 
 from zx64c.scanner import Token, TokenCategory
@@ -45,6 +48,44 @@ from zx64c.ast import (
 )
 
 
+class ParseError(Exception, ABC):
+    def __init__(self, context: SourceContext):
+        self._context = context
+
+    def make_error_message(self) -> str:
+        return (
+            f"At line {self._context.line}, column {self._context.column}: "
+            f"{self._make_error_message()}"
+        )
+
+    @abc.abstractmethod
+    def _make_error_message(self) -> str:
+        pass
+
+    def __eq__(self, rhs: ParseError):
+        return self.make_error_message() == rhs.make_error_message()
+
+
+class UnexpectedToken(ParseError):
+    def __init__(
+        self,
+        expected_tokens: [TokenCategory],
+        encountered_token: TokenCategory,
+        context: SourceContext,
+    ):
+        super().__init__(context)
+        self._expected_tokens = expected_tokens
+        self._encountered_token = encountered_token
+
+    def _make_error_message(self) -> str:
+        expected_tokens = "".join([str(tok) + ", " for tok in self._expected_tokens])
+        expected_tokens = expected_tokens.rstrip(", ")
+        return (
+            f"Encountered unexpected token {self._encountered_token}. Expected "
+            f"one of {expected_tokens}."
+        )
+
+
 class Parser:
     def __init__(self, tokens: List[Token]):
         self._tokens = tokens
@@ -61,10 +102,9 @@ class Parser:
 
     def _consume(self, category: TokenCategory) -> Token:
         if self._current_token.category is not category:
-            raise RuntimeError(
-                f"Unexpected token, expected {category} got "
-                f"{self._current_token.category}."
-            )
+            context = self._make_context()
+            raise UnexpectedToken([category], self._current_token.category, context)
+
         token = self._current_token
         self._tokens = self._tokens[1:]
         return token
@@ -168,24 +208,22 @@ class Parser:
             return self._parse_atom()
 
     def _parse_atom(self) -> Ast:
+        context = self._make_context()
         if self._current_token.category is TokenCategory.UNSIGNEDINT:
             value = int(self._current_token.lexeme)
-            context = self._make_context()
             self._advance()
             return Unsignedint(value, context)
         elif self._current_token.category is TokenCategory.IDENTIFIER:
             value = self._current_token.lexeme
-            context = self._make_context()
             self._advance()
             return Identifier(value, context)
         elif self._current_token.category in [TokenCategory.TRUE, TokenCategory.FALSE]:
             value = self._current_token.category is TokenCategory.TRUE
-            context = self._make_context()
             self._advance()
             return Bool(value, context)
         else:
-            raise RuntimeError(
-                f"Unexpected token, expected one of "
-                f"{[TokenCategory.UNSIGNEDINT, TokenCategory.IDENTIFIER]} got "
-                f"{self._current_token.category}."
+            raise UnexpectedToken(
+                [TokenCategory.UNSIGNEDINT, TokenCategory.IDENTIFIER],
+                self._current_token.category,
+                context,
             )
