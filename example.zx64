@@ -1,4 +1,6 @@
 x = 3
 y = true
 z = false
-print(49 + x)
+if y:
+    print(49 + x)
+

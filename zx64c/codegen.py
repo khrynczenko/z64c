@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from zx64c.ast import (
     Program,
+    Block,
+    If,
     Print,
     Assignment,
     Addition,
@@ -13,6 +15,12 @@ from zx64c.ast import (
 from zx64c.ast import AstVisitor, T
 
 INDENTATION = "    "
+
+_LABEL = 0
+
+
+def make_label() -> str:
+    return f"LB{_LABEL}"
 
 
 class Environment:
@@ -39,6 +47,12 @@ class SjasmplusSnapshotVisitor(AstVisitor[None]):
         self._codegen.visit_program(node)
         print("")
         print(f'{INDENTATION}SAVESNA "{self._source_name}.sna", start')
+
+    def visit_block(self, node: Block) -> None:
+        self._codegen.visit_block(node)
+
+    def visit_if(self, node: If) -> None:
+        self._codegen.visit_if(node)
 
     def visit_print(self, node: Print) -> None:
         self._codegen.visit_print(node)
@@ -70,6 +84,18 @@ class Z80CodegenVisitor(AstVisitor[None]):
         for statement in node.statements:
             statement.visit(self)
         print(f"{INDENTATION}ret")
+
+    def visit_block(self, node: Block) -> None:
+        for statement in node.statements:
+            statement.visit(self)
+
+    def visit_if(self, node: If) -> None:
+        label = make_label()
+        node.condition.visit(self)
+        print(f"{INDENTATION}cp $01")
+        print(f"{INDENTATION}jp nz, {label}")
+        node.consequence.visit(self)
+        print(f"{label}:")
 
     def visit_print(self, node: Print) -> T:
         node.expression.visit(self)
