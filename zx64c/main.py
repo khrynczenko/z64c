@@ -11,8 +11,8 @@ from zx64c.typechecker import TypecheckerVisitor, TypecheckError
 def z64c(source: str):
     with open(source, "r") as file:
         source_text = file.read()
-    scanner = Scanner(source_text)
 
+    scanner = Scanner(source_text)
     try:
         tokens = scanner.scan()
     except ScanError as e:
@@ -23,9 +23,10 @@ def z64c(source: str):
     ast = parser.parse()
 
     typechecker = TypecheckerVisitor()
-    typecheck_result = ast.visit(typechecker)
-    if isinstance(typecheck_result, TypecheckError):
-        print(typecheck_result.make_error_message())
+    try:
+        ast.visit(typechecker)
+    except TypecheckError as e:
+        print(e.make_error_message())
         return
 
     codegen = Z80CodegenVisitor(Environment())
