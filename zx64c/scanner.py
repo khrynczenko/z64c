@@ -3,10 +3,14 @@ This file forms a lexical specification and its implemetation for the
 z64 language.
 
 """
+from __future__ import annotations
+
+import abc
 import dataclasses
 import enum
 import itertools
 
+from abc import ABC
 from typing import Text, List, Callable
 
 
@@ -47,6 +51,61 @@ KEYWORD_CATEGORIES = {
     "false": TokenCategory.FALSE,
     "if": TokenCategory.IF,
 }
+
+
+class ScanError(Exception, ABC):
+    def __init__(self, line: int, column: int):
+        self._line = line
+        self._column = column
+
+    def make_error_message(self) -> str:
+        return (
+            f"At line {self._line}, column {self._column}: {self._make_error_message()}"
+        )
+
+    @abc.abstractmethod
+    def _make_error_message(self) -> str:
+        pass
+
+    @abc.abstractmethod
+    def __eq__(self, rhs: ScanError) -> bool:
+        pass
+
+
+class UnrecognizedTokenError(ScanError):
+    def __init__(self, line: int, column: int, leading_char: str):
+        super().__init__(line, column)
+        self._leading_char = leading_char
+
+    def _make_error_message(self) -> str:
+        return (
+            f"Unrecognized syntax. There is no valid tokens that starts"
+            f"with `{self._leading_char}`."
+        )
+
+    def __eq__(self, rhs: UnrecognizedTokenError) -> bool:
+        return (self._line, self._column) == (rhs._line, rhs._column)
+
+
+class UnevenIndentError(ScanError):
+    def __init__(self, line: int, column: int, space_count: int):
+        super().__init__(line, column)
+        self._space_count = space_count
+
+    def _make_error_message(self) -> str:
+        return (
+            "The only whitespace that is allowed at the beginning of a line "
+            "is one or more indentations and each must be made of four spaces. "
+            f"Whitespace count at this line is {self._space_count} which "
+            f"is not a multiple of 4."
+        )
+
+    def __eq__(self, rhs: UnevenIndentError) -> bool:
+        return (self._line, self._column, self._space_count) == (
+            rhs._line,
+            rhs._column,
+            self._space_count,
+        )
 
 
 @dataclasses.dataclass
@@ -134,9 +193,8 @@ class Scanner:
                 )
 
             else:
-                raise RuntimeError(
-                    f"Unrecognized syntax at line {self._line} "
-                    f"column {self._column}."
+                raise UnrecognizedTokenError(
+                    self._line, self._column, self._source[self._source_index]
                 )
 
         return self._produced_tokens + [
@@ -196,12 +254,7 @@ class Scanner:
             return 0
 
         if space_count % 4 != 0:
-            raise RuntimeError(
-                "The only whitespace that is allowed at the beginning of a line "
-                "is one or more indentations and each must be made of four spaces."
-                "Whitespace count at line {self._line} is {space_count} which "
-                "is not a multiple of 4"
-            )
+            raise UnevenIndentError(self._line, self._column, space_count)
         return space_count // 4
 
     def _consume_one_character_symbol(self, character: str, category: TokenCategory):
