@@ -7,7 +7,7 @@ Below is the language grammar.
 
 <program> -> <statement>* EOF
 <statement> -> <simple_statement> NEWLINE
-<statement> -> <compount_statement> NEWLINE
+<statement> -> <compount_statement>
 <simple_statement> -> <print>
 <simple_statement> -> <assignment>
 <compound_statement> -> <if>
@@ -142,7 +142,6 @@ class Parser:
 
     def _parse_compound_statement(self) -> Ast:
         if_statement = self._parse_if()
-        self._consume(TokenCategory.NEWLINE)
         return if_statement
 
     def _parse_if(self) -> Ast:

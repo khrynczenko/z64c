@@ -180,7 +180,6 @@ def test_parsing_if_statement():
         make_token_with_lexeme(TokenCategory.IDENTIFIER, "y"),
         make_arbitrary_token(TokenCategory.NEWLINE),
         make_arbitrary_token(TokenCategory.DEDENT),
-        make_arbitrary_token(TokenCategory.NEWLINE),
         make_arbitrary_token(TokenCategory.EOF),
     ]
 

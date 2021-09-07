@@ -233,7 +233,7 @@ def test_scanner_idents_and_dedents():
 
 
 def test_scanner_with_nested_idents_and_dedents():
-    source = "\n    1\n        \n"
+    source = "\n    1\n        1\n"
     scanner = Scanner(source)
     tokens = scanner.scan()
     print(tokens)
@@ -244,15 +244,16 @@ def test_scanner_with_nested_idents_and_dedents():
         Token(2, 5, TokenCategory.UNSIGNEDINT, "1"),
         Token(2, 6, TokenCategory.NEWLINE, "\n"),
         Token(3, 1, TokenCategory.INDENT, "    "),
-        Token(3, 9, TokenCategory.NEWLINE, "\n"),
+        Token(3, 9, TokenCategory.UNSIGNEDINT, "1"),
+        Token(3, 10, TokenCategory.NEWLINE, "\n"),
         Token(4, 1, TokenCategory.DEDENT, "    "),
         Token(4, 1, TokenCategory.DEDENT, "    "),
         Token(4, 1, TokenCategory.EOF, ""),
     ]
 
 
-def test_scanner_with_nested_idents_and_nested_dedents():
-    source = "\n    1\n        \n    \n"
+def test_scanner_with_nested_indents_and_nested_dedents():
+    source = "\n    1\n        1\n    \n"
     scanner = Scanner(source)
     tokens = scanner.scan()
     print(tokens)
@@ -263,16 +264,16 @@ def test_scanner_with_nested_idents_and_nested_dedents():
         Token(2, 5, TokenCategory.UNSIGNEDINT, "1"),
         Token(2, 6, TokenCategory.NEWLINE, "\n"),
         Token(3, 1, TokenCategory.INDENT, "    "),
-        Token(3, 9, TokenCategory.NEWLINE, "\n"),
-        Token(4, 1, TokenCategory.DEDENT, "    "),
+        Token(3, 9, TokenCategory.UNSIGNEDINT, "1"),
         Token(4, 5, TokenCategory.NEWLINE, "\n"),
+        Token(5, 1, TokenCategory.DEDENT, "    "),
         Token(5, 1, TokenCategory.DEDENT, "    "),
         Token(5, 1, TokenCategory.EOF, ""),
     ]
 
 
 def test_scanner_produces_error_on_uneven_indentation():
-    source = "\n  \n"
+    source = "\n  1\n"
     scanner = Scanner(source)
 
     with pytest.raises(UnevenIndentError):

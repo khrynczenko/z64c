@@ -47,7 +47,7 @@ class TokenCategory(enum.Enum):
     def __str__(self):
         str_map = {
             TokenCategory.EOF: "EOF",
-            TokenCategory.NEWLINE: "\n",
+            TokenCategory.NEWLINE: "\\n",
             TokenCategory.INDENT: "INDENT",
             TokenCategory.DEDENT: "DEDENT",
             TokenCategory.PRINT: "print",
@@ -64,7 +64,7 @@ class TokenCategory(enum.Enum):
             TokenCategory.UNSIGNEDINT: "<decimal>",
             TokenCategory.IDENTIFIER: "<identifier>",
         }
-        return str_map[self]
+        return f"'{str_map[self]}'"
 
 
 KEYWORD_CATEGORIES = {
@@ -149,7 +149,7 @@ class Scanner:
 
     def scan(self) -> List[Token]:
         while self._source_index < len(self._source):
-            remaining_source = self._source[self._source_index :]
+            remaining_source = self._remaining_source
 
             if remaining_source.startswith(" "):
                 self._advance()
@@ -219,14 +219,37 @@ class Scanner:
                     self._line, self._column, self._source[self._source_index]
                 )
 
-        return self._produced_tokens + [
-            Token(self._line, self._column, TokenCategory.EOF, "")
-        ]
+        return self._remove_extra_newlines(
+            self._produced_tokens
+            + [Token(self._line, self._column, TokenCategory.EOF, "")]
+        )
+
+    @property
+    def _remaining_source(self):
+        return self._source[self._source_index :]
+
+    def _remove_extra_newlines(self, tokens: [Token]):
+        filtered_tokens = []
+
+        tokens_shifted_right = itertools.cycle(tokens)
+        next(tokens_shifted_right)
+        # ^ we obtained second iterator to tokens but shifted to right by one
+        #   thanks to that we can now iterator over both of them and
+        #   have easy access to current token and next token each iteration
+
+        for token, next_token in zip(tokens, tokens_shifted_right):
+            if (
+                token.category is TokenCategory.NEWLINE
+                and next_token.category is TokenCategory.NEWLINE
+            ):
+                continue
+            filtered_tokens.append(token)
+        return filtered_tokens
 
     def _is_keyword_next(self):
         return any(
             map(
-                lambda keyword: self._source[self._source_index :].startswith(keyword),
+                lambda keyword: self._remaining_source.startswith(keyword),
                 KEYWORD_CATEGORIES,
             )
         )
@@ -244,6 +267,11 @@ class Scanner:
         self._source_index += 1
 
     def _consume_possible_indentations(self):
+        remaining_source = self._remaining_source
+
+        if remaining_source.lstrip(" ") and remaining_source.lstrip(" ")[0] == "\n":
+            return []
+
         indents = []
         new_indent_level = self._count_indentations()
 
@@ -266,11 +294,7 @@ class Scanner:
 
     def _count_indentations(self):
         space_count = len(
-            list(
-                itertools.takewhile(
-                    lambda s: s == " ", self._source[self._source_index :]
-                )
-            )
+            list(itertools.takewhile(lambda s: s == " ", self._remaining_source))
         )
         if space_count == 0:
             return 0
@@ -297,7 +321,7 @@ class Scanner:
         character_predicate: Callable[[str], bool],
     ):
         characters = "".join(
-            itertools.takewhile(character_predicate, self._source[self._source_index :])
+            itertools.takewhile(character_predicate, self._remaining_source)
         )
 
         token = Token(
@@ -315,7 +339,7 @@ class Scanner:
         resulting_category: TokenCategory,
     ):
         characters = "".join(
-            itertools.takewhile(character_predicate, self._source[self._source_index :])
+            itertools.takewhile(character_predicate, self._remaining_source)
         )
 
         token = Token(self._line, self._column, resulting_category, characters)
