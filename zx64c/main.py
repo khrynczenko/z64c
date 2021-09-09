@@ -15,8 +15,6 @@ def z64c(source: str):
     scanner = Scanner(source_text)
     try:
         tokens = scanner.scan()
-        for token in tokens:
-            print(token)
     except ScanError as e:
         print(e.make_error_message())
         return

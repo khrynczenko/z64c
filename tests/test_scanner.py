@@ -220,7 +220,6 @@ def test_scanner_idents_and_dedents():
     source = "\n    1\n"
     scanner = Scanner(source)
     tokens = scanner.scan()
-    print(tokens)
 
     assert tokens == [
         Token(1, 1, TokenCategory.NEWLINE, "\n"),
@@ -236,7 +235,6 @@ def test_scanner_with_nested_idents_and_dedents():
     source = "\n    1\n        1\n"
     scanner = Scanner(source)
     tokens = scanner.scan()
-    print(tokens)
 
     assert tokens == [
         Token(1, 1, TokenCategory.NEWLINE, "\n"),
@@ -256,7 +254,6 @@ def test_scanner_with_nested_indents_and_nested_dedents():
     source = "\n    1\n        1\n    \n"
     scanner = Scanner(source)
     tokens = scanner.scan()
-    print(tokens)
 
     assert tokens == [
         Token(1, 1, TokenCategory.NEWLINE, "\n"),

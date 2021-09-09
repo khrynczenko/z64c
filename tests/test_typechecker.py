@@ -137,7 +137,6 @@ def test_negation_node_type_mismatch():
     try:
         ast.visit(TypecheckerVisitor())
     except TypeMismatch as e:
-        print("X")
         assert e == TypeMismatch(Type.U8, Type.BOOL, TEST_CONTEXT)
         return
 
