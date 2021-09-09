@@ -26,6 +26,9 @@ class TokenCategory(enum.Enum):
     PRINT = enum.auto()
     TRUE = enum.auto()
     FALSE = enum.auto()
+    BOOL = enum.auto()
+    U8 = enum.auto()
+    LET = enum.auto()
     IF = enum.auto()
 
     COLON = enum.auto()
@@ -53,6 +56,9 @@ class TokenCategory(enum.Enum):
             TokenCategory.PRINT: "print",
             TokenCategory.TRUE: "true",
             TokenCategory.FALSE: "false",
+            TokenCategory.BOOL: "bool",
+            TokenCategory.U8: "u8",
+            TokenCategory.LET: "let",
             TokenCategory.IF: "if",
             TokenCategory.COLON: ":",
             TokenCategory.LEFT_PAREN: "(",
@@ -71,6 +77,9 @@ KEYWORD_CATEGORIES = {
     "print": TokenCategory.PRINT,
     "true": TokenCategory.TRUE,
     "false": TokenCategory.FALSE,
+    "bool": TokenCategory.BOOL,
+    "u8": TokenCategory.U8,
+    "let": TokenCategory.LET,
     "if": TokenCategory.IF,
 }
 
@@ -207,7 +216,7 @@ class Scanner:
                     self._consume_keyword(_is_identifier_character)
                 )
 
-            elif _is_identifier_character(remaining_source[0]):
+            elif _is_identifier_leading_character(remaining_source[0]):
                 self._produced_tokens.append(
                     self._consume_multi_character_symbol(
                         _is_identifier_character, TokenCategory.IDENTIFIER
@@ -350,5 +359,9 @@ class Scanner:
         return token
 
 
-def _is_identifier_character(c: Text) -> bool:
+def _is_identifier_leading_character(c: Text) -> bool:
     return (c.isalpha() and c.isascii()) or c == "_"
+
+
+def _is_identifier_character(c: Text) -> bool:
+    return _is_identifier_leading_character(c) or c.isdigit()

@@ -21,6 +21,9 @@ class AstVisitor(ABC, Generic[T]):
     def visit_print(self, node: Print) -> T:
         pass
 
+    def visit_let(self, node: Assignment) -> T:
+        pass
+
     def visit_assignment(self, node: Assignment) -> T:
         pass
 
@@ -134,6 +137,25 @@ class Print(Ast):
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_print(self)
+
+
+class Let(Ast):
+    def __init__(self, name: str, type_name: str, rhs: Ast, context: SourceContext):
+        super().__init__(context)
+        self.name = name
+        self.type_name = type_name
+        self.rhs = rhs
+
+    def __eq__(self, rhs: Assignment) -> bool:
+        return (
+            self.name == rhs.name
+            and self.type_name == rhs.type_name
+            and self.rhs == rhs.rhs
+            and self.context == rhs.context
+        )
+
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visit_let(self)
 
 
 class Assignment(Ast):

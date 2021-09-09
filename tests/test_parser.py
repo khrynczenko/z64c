@@ -5,6 +5,7 @@ from tests.ast import (
     BlockTC,
     IfTC,
     PrintTC,
+    LetTC,
     AssignmentTC,
     AdditionTC,
     NegationTC,
@@ -42,6 +43,25 @@ def test_parsing_print_identifier():
     parser = Parser(tokens)
     ast = parser.parse()
     expected_ast = ProgramTC([PrintTC(UnsignedintTC(10))])
+    assert ast == expected_ast
+
+
+def test_parsing_let_unsigned_int():
+    tokens = [
+        make_arbitrary_token(TokenCategory.LET),
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "x"),
+        make_arbitrary_token(TokenCategory.COLON),
+        make_token_with_lexeme(TokenCategory.U8, "u8"),
+        make_arbitrary_token(TokenCategory.ASSIGN),
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "10"),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+        make_arbitrary_token(TokenCategory.EOF),
+    ]
+
+    parser = Parser(tokens)
+    ast = parser.parse()
+    expected_ast = ProgramTC([LetTC("x", "u8", UnsignedintTC(10))])
+    print(ast.statements[0].type_name)
     assert ast == expected_ast
 
 

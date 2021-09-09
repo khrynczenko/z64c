@@ -7,13 +7,15 @@ Below is the language grammar.
 
 <program> -> <statement>* EOF
 <statement> -> <simple_statement> NEWLINE
-<statement> -> <compount_statement>
+<statement> -> <compound_statement>
 <simple_statement> -> <print>
 <simple_statement> -> <assignment>
+<simple_statement> -> <let>
 <compound_statement> -> <if>
 <if> -> IF <expression> COLON NEWLINE <block>
 <block> INDENT <statement>* DEDENT
 <print> -> PRINT LEFT_PAREN <expression> RIGHT_PAREN
+<let> -> LET IDENTIFIER COLON <type> ASSIGN <expression>
 <assignment> -> IDENTIFIER ASSIGN <expression>
 <expression> -> <term> (PLUS <term>)*
 <term> -> <factor> (STAR <factor>)*
@@ -24,6 +26,7 @@ Below is the language grammar.
 <atom> -> UNSIGNEDINT
 <atom> -> IDENTIFIER
 <atom> -> TRUE | FALSE
+<type> -> U8 | BOOL | IDENTIFIER
 """
 from __future__ import annotations
 
@@ -39,6 +42,7 @@ from zx64c.ast import (
     Block,
     If,
     Print,
+    Let,
     Assignment,
     Addition,
     Negation,
@@ -131,6 +135,10 @@ class Parser:
             print_statement = self._parse_print()
             self._consume(TokenCategory.NEWLINE)
             return print_statement
+        elif categories[0] is TokenCategory.LET:
+            let_statement = self._parse_let()
+            self._consume(TokenCategory.NEWLINE)
+            return let_statement
         elif categories[:2] == [TokenCategory.IDENTIFIER, TokenCategory.ASSIGN]:
             assignment_statement = self._parse_assignment()
             self._consume(TokenCategory.NEWLINE)
@@ -169,6 +177,16 @@ class Parser:
         expression = self._parse_expression()
         self._consume(TokenCategory.RIGHT_PAREN)
         return Print(expression, context)
+
+    def _parse_let(self) -> Ast:
+        context = self._make_context()
+        self._consume(TokenCategory.LET)
+        name_token = self._consume(TokenCategory.IDENTIFIER)
+        self._consume(TokenCategory.COLON)
+        type_name = self._parse_type()
+        self._consume(TokenCategory.ASSIGN)
+        expression = self._parse_expression()
+        return Let(name_token.lexeme, type_name, expression, context)
 
     def _parse_assignment(self) -> Ast:
         context = self._make_context()
@@ -228,6 +246,25 @@ class Parser:
                     TokenCategory.FALSE,
                     TokenCategory.IDENTIFIER,
                 ],
+                self._current_token.category,
+                context,
+            )
+
+    def _parse_type(self) -> str:
+        context = self._make_context()
+        possible_type_tokens = [
+            TokenCategory.BOOL,
+            TokenCategory.U8,
+            TokenCategory.IDENTIFIER,
+        ]
+
+        if self._current_token.category in possible_type_tokens:
+            value = self._current_token.lexeme
+            self._advance()
+            return value
+        else:
+            raise UnexpectedToken(
+                possible_type_tokens,
                 self._current_token.category,
                 context,
             )
