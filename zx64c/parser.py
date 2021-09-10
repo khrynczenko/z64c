@@ -222,7 +222,12 @@ class Parser:
             return Bool(value, context)
         else:
             raise UnexpectedToken(
-                [TokenCategory.UNSIGNEDINT, TokenCategory.IDENTIFIER],
+                [
+                    TokenCategory.UNSIGNEDINT,
+                    TokenCategory.TRUE,
+                    TokenCategory.FALSE,
+                    TokenCategory.IDENTIFIER,
+                ],
                 self._current_token.category,
                 context,
             )
