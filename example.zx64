@@ -1,6 +1,6 @@
-x = 3
-y = true
-z = false
+let x: u8 = 3
+let y: bool = true
+let z: bool = false
 if y:
     print(49 + x)
 

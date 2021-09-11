@@ -5,6 +5,7 @@ from zx64c.ast import (
     Block,
     If,
     Print,
+    Let,
     Assignment,
     Addition,
     Negation,
@@ -57,6 +58,9 @@ class SjasmplusSnapshotVisitor(AstVisitor[None]):
     def visit_print(self, node: Print) -> None:
         self._codegen.visit_print(node)
 
+    def visit_let(self, node: Let) -> None:
+        self._codegen.visit_let(node)
+
     def visit_assignment(self, node: Assignment) -> None:
         self._codegen.visit_assignment(node)
 
@@ -101,10 +105,18 @@ class Z80CodegenVisitor(AstVisitor[None]):
         node.expression.visit(self)
         print(f"{INDENTATION}rst $10")
 
-    def visit_assignment(self, node: Assignment) -> None:
+    def visit_let(self, node: Let) -> None:
         node.rhs.visit(self)
         self._environment.add_variable(node.name)
         print(f"{INDENTATION}push af")
+
+    def visit_assignment(self, node: Assignment) -> None:
+        node.rhs.visit(self)
+        offset = self._environment.get_variable_offset(node.value)
+        print(f"{INDENTATION}ld hl, $00")
+        print(f"{INDENTATION}add hl, sp")
+        print(f"{INDENTATION}ld ix, hl")
+        print(f"{INDENTATION}ld (ix + {offset + 1}), a")
 
     def visit_addition(self, node: Addition) -> None:
         node.lhs.visit(self)

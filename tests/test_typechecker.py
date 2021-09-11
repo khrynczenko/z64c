@@ -1,12 +1,13 @@
 import pytest
 
-from zx64c.ast import SourceContext, Identifier
+from zx64c.ast import SourceContext, Identifier, Assignment, Print
 from tests.ast import (
     TEST_CONTEXT,
     ProgramTC,
     BlockTC,
     IfTC,
     PrintTC,
+    LetTC,
     AssignmentTC,
     AdditionTC,
     NegationTC,
@@ -14,12 +15,13 @@ from tests.ast import (
     IdentifierTC,
     BoolTC,
 )
+from zx64c.types import Type, VOID, U8, BOOL
 from zx64c.typechecker import (
     TypecheckerVisitor,
     Environment,
-    Type,
     CombinedTypecheckError,
     TypeMismatch,
+    UndefinedTypeError,
     UndefinedVariable,
 )
 
@@ -29,7 +31,7 @@ def test_unsignedint_node_type():
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result is Type.U8
+    assert typecheck_result == U8
 
 
 def test_bool_node_type():
@@ -37,7 +39,7 @@ def test_bool_node_type():
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result is Type.BOOL
+    assert typecheck_result == BOOL
 
 
 def test_addition_node_type():
@@ -45,14 +47,14 @@ def test_addition_node_type():
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result is Type.U8
+    assert typecheck_result == U8
 
 
 @pytest.mark.parametrize(
     "lhs_node, rhs_node, expected_type, got_type",
     [
-        (BoolTC(True), UnsignedintTC(1), Type.U8, Type.BOOL),
-        (UnsignedintTC(1), BoolTC(True), Type.U8, Type.BOOL),
+        (BoolTC(True), UnsignedintTC(1), U8, BOOL),
+        (UnsignedintTC(1), BoolTC(True), U8, BOOL),
     ],
 )
 def test_addition_node_type_mismatch(lhs_node, rhs_node, expected_type, got_type):
@@ -83,10 +85,10 @@ def test_addition_node_type_error_propagates(lhs_node, rhs_node):
     assert False, "Expected undefined variable exception not raised"
 
 
-def test_addition_node_type_mismatch_with_identifier():
+def test_addition_node_type_mismatch_with_variable():
     ast = ProgramTC(
         [
-            AssignmentTC("x", BoolTC(True)),
+            LetTC("x", BOOL, BoolTC(True)),
             AdditionTC(IdentifierTC("x"), UnsignedintTC(1)),
         ]
     )
@@ -94,7 +96,7 @@ def test_addition_node_type_mismatch_with_identifier():
     try:
         ast.visit(TypecheckerVisitor())
     except CombinedTypecheckError as e:
-        e == CombinedTypecheckError([TypeMismatch(Type.U8, Type.BOOL, TEST_CONTEXT)])
+        e == CombinedTypecheckError([TypeMismatch(U8, BOOL, TEST_CONTEXT)])
         return
 
     assert False, "Expected type error exception not raised"
@@ -103,11 +105,11 @@ def test_addition_node_type_mismatch_with_identifier():
 def test_identifier_node_type():
     ast = IdentifierTC("x")
     environment = Environment()
-    environment.add_variable("x", Type.U8)
+    environment.add_variable("x", U8, TEST_CONTEXT)
 
     typecheck_result = ast.visit(TypecheckerVisitor(environment))
 
-    assert typecheck_result is Type.U8
+    assert typecheck_result is U8
 
 
 def test_identifier_node_type_with_undefined_variable():
@@ -128,7 +130,7 @@ def test_negation_node():
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result is Type.U8
+    assert typecheck_result is U8
 
 
 def test_negation_node_type_mismatch():
@@ -137,7 +139,7 @@ def test_negation_node_type_mismatch():
     try:
         ast.visit(TypecheckerVisitor())
     except TypeMismatch as e:
-        assert e == TypeMismatch(Type.U8, Type.BOOL, TEST_CONTEXT)
+        assert e == TypeMismatch(U8, BOOL, TEST_CONTEXT)
         return
 
     assert False, "Expected type error exception not raised"
@@ -148,37 +150,55 @@ def test_print_node_type():
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result is Type.VOID
+    assert typecheck_result is VOID
 
 
 def test_assignment_node_type():
+    environment = Environment()
+    environment.add_variable("x", U8, TEST_CONTEXT)
     ast = AssignmentTC("x", UnsignedintTC(1))
 
-    typecheck_result = ast.visit(TypecheckerVisitor())
+    typecheck_result = ast.visit(TypecheckerVisitor(environment))
 
-    assert typecheck_result is Type.VOID
+    assert typecheck_result is VOID
 
 
 def test_assignment_node_raises_mismatch():
-    ast = ProgramTC(
-        [AssignmentTC("x", UnsignedintTC(1)), AssignmentTC("x", BoolTC(True))]
-    )
+    ast = ProgramTC([LetTC("x", U8, UnsignedintTC(1)), AssignmentTC("x", BoolTC(True))])
 
     try:
         ast.visit(TypecheckerVisitor())
     except CombinedTypecheckError as e:
-        assert e == CombinedTypecheckError(
-            [TypeMismatch(Type.U8, Type.BOOL, TEST_CONTEXT)]
-        )
+        assert e == CombinedTypecheckError([TypeMismatch(U8, BOOL, TEST_CONTEXT)])
         return
 
     assert False, "Expected type error exception not raised"
 
 
-def test_assignment_node_raises_in_if_mismatch():
+def test_let_node():
+    ast = LetTC("x", U8, UnsignedintTC(1))
+
+    typecheck_result = ast.visit(TypecheckerVisitor())
+
+    assert typecheck_result is VOID
+
+
+def test_let_node_raises_undefined_type():
+    ast = LetTC("x", Type("unknown"), UnsignedintTC(1))
+
+    try:
+        ast.visit(TypecheckerVisitor())
+    except UndefinedTypeError as e:
+        assert e == UndefinedTypeError(Type("unknown"), TEST_CONTEXT)
+        return
+
+    assert False, "Expected type error exception not raised"
+
+
+def test_let_node_raises_in_if_mismatch():
     ast = ProgramTC(
         [
-            AssignmentTC("x", UnsignedintTC(1)),
+            LetTC("x", U8, UnsignedintTC(1)),
             IfTC(BoolTC(True), AssignmentTC("x", BoolTC(True))),
         ]
     )
@@ -186,26 +206,24 @@ def test_assignment_node_raises_in_if_mismatch():
     try:
         ast.visit(TypecheckerVisitor())
     except CombinedTypecheckError as e:
-        assert e == CombinedTypecheckError(
-            [TypeMismatch(Type.U8, Type.BOOL, TEST_CONTEXT)]
-        )
+        assert e == CombinedTypecheckError([TypeMismatch(U8, BOOL, TEST_CONTEXT)])
         return
 
     assert False, "Expected type error exception not raised"
 
 
 def test_program_node_type():
-    ast = ProgramTC([AssignmentTC("x", UnsignedintTC(1))])
+    ast = ProgramTC([LetTC("x", U8, UnsignedintTC(1))])
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result is Type.VOID
+    assert typecheck_result is VOID
 
 
 def test_program_node_type_with_errors():
     context = SourceContext(1, 5)
     identifier = Identifier("y", context)
-    ast = ProgramTC([AssignmentTC("x", UnsignedintTC(1)), PrintTC(identifier)])
+    ast = ProgramTC([LetTC("x", U8, UnsignedintTC(1)), PrintTC(identifier)])
 
     try:
         ast.visit(TypecheckerVisitor())
@@ -217,42 +235,49 @@ def test_program_node_type_with_errors():
 
 
 def test_block_node_type():
-    ast = BlockTC([AssignmentTC("x", UnsignedintTC(1)), PrintTC(UnsignedintTC(1))])
+    ast = BlockTC([LetTC("x", U8, UnsignedintTC(1)), PrintTC(UnsignedintTC(1))])
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result is Type.VOID
+    assert typecheck_result is VOID
 
 
 def test_block_node_type_combines_errors():
     context = SourceContext(1, 5)
     identifier = Identifier("undefined", context)
-    ast = BlockTC([AssignmentTC("x", UnsignedintTC(1)), PrintTC(identifier)])
+    ast = BlockTC(
+        [Assignment("x", UnsignedintTC(1), context), Print(identifier, context)]
+    )
 
     try:
         ast.visit(TypecheckerVisitor())
     except CombinedTypecheckError as e:
-        assert e == CombinedTypecheckError([UndefinedVariable("undefined", context)])
+        assert e == CombinedTypecheckError(
+            [
+                UndefinedVariable("x", context),
+                UndefinedVariable("undefined", context),
+            ]
+        )
         return
 
     assert False, "Expected type error exception not raised"
 
 
 def test_if_node_type():
-    ast = IfTC(BoolTC(True), AssignmentTC("x", UnsignedintTC(1)))
+    ast = IfTC(BoolTC(True), LetTC("x", U8, UnsignedintTC(1)))
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result is Type.VOID
+    assert typecheck_result is VOID
 
 
 def test_if_node_type_mismatches_on_not_bool():
-    ast = IfTC(UnsignedintTC(1), AssignmentTC("x", UnsignedintTC(1)))
+    ast = IfTC(UnsignedintTC(1), LetTC("x", U8, UnsignedintTC(1)))
 
     try:
         ast.visit(TypecheckerVisitor())
     except TypeMismatch as e:
-        assert e == TypeMismatch(Type.BOOL, Type.U8, TEST_CONTEXT)
+        assert e == TypeMismatch(BOOL, U8, TEST_CONTEXT)
         return
 
     assert False, "Expected type error exception not raised"

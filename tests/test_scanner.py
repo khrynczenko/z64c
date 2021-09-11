@@ -172,6 +172,39 @@ def test_scanner_produces_identifier():
     ]
 
 
+def test_scanner_produces_bool():
+    source = "  bool  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.BOOL, "bool"),
+        Token(1, 9, TokenCategory.EOF, ""),
+    ]
+
+
+def test_scanner_produces_u8():
+    source = "  u8  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.U8, "u8"),
+        Token(1, 7, TokenCategory.EOF, ""),
+    ]
+
+
+def test_scanner_produces_let():
+    source = "  let  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.LET, "let"),
+        Token(1, 8, TokenCategory.EOF, ""),
+    ]
+
+
 def test_scanner_produces_if():
     source = "  if  "
     scanner = Scanner(source)
