@@ -41,10 +41,12 @@ from typing import List
 
 from zx64c.scanner import Token, TokenCategory
 from zx64c.types import Type
+from zx64c.ast import Parameter
 from zx64c.ast import (
     SourceContext,
     Ast,
     Program,
+    Function,
     Block,
     If,
     Print,
@@ -125,11 +127,44 @@ class Parser:
         return SourceContext(self._current_token.line, self._current_token.column)
 
     def _parse_program(self) -> Ast:
-        statements = []
+        functions = []
         context = self._make_context()
         while self._current_token.category is not TokenCategory.EOF:
-            statements.append(self._parse_statement())
-        return Program(statements, context)
+            functions.append(self._parse_function())
+        return Program(functions, context)
+
+    def _parse_function(self) -> Parameter:
+        context = self._make_context()
+        self._consume(TokenCategory.DEF)
+        identifier = self._consume(TokenCategory.IDENTIFIER)
+        self._consume(TokenCategory.LEFT_PAREN)
+        parameters = self._parse_parameters()
+        self._consume(TokenCategory.RIGHT_PAREN)
+        self._consume(TokenCategory.ARROW)
+        return_type_id = self._parse_type()
+        self._consume(TokenCategory.COLON)
+        self._consume(TokenCategory.NEWLINE)
+        block = self._parse_block()
+        return Function(identifier.lexeme, parameters, return_type_id, block, context)
+
+    def _parse_parameters(self) -> [Parameter]:
+        if self._current_token.category is TokenCategory.RIGHT_PAREN:
+            return []
+
+        parameters = []
+        parameters.append(self._parse_parameter())
+
+        while self._current_token.category is TokenCategory.COMMA:
+            self._advance()
+            parameters.append(self._parse_parameter())
+
+        return parameters
+
+    def _parse_parameter(self) -> Parameter:
+        identifier = self._consume(TokenCategory.IDENTIFIER)
+        self._consume(TokenCategory.COLON)
+        type_id = self._parse_type()
+        return Parameter(identifier.lexeme, type_id)
 
     def _parse_statement(self) -> Ast:
         if self._current_token.category in [TokenCategory.IF]:

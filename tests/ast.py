@@ -8,6 +8,7 @@ import functools
 
 from zx64c.ast import (
     Program,
+    Function,
     Block,
     If,
     Let,
@@ -25,6 +26,7 @@ TEST_CONTEXT = SourceContext(0, 0)
 
 # Ast nodes that have already filled context in the constructor
 ProgramTC = functools.partial(Program, context=TEST_CONTEXT)
+FunctionTC = functools.partial(Function, context=TEST_CONTEXT)
 BlockTC = functools.partial(Block, context=TEST_CONTEXT)
 IfTC = functools.partial(If, context=TEST_CONTEXT)
 LetTC = functools.partial(Let, context=TEST_CONTEXT)

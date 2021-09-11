@@ -4,6 +4,7 @@ import abc
 
 from typing import List, Text, TypeVar, Generic
 from abc import ABC
+from dataclasses import dataclass
 
 from zx64c.types import Type
 
@@ -93,15 +94,50 @@ class SjasmplusSnapshotProgram(Ast):
 
 
 class Program(Ast):
-    def __init__(self, statements: List[Ast], context: SourceContext):
+    def __init__(self, functions: List[Ast], context: SourceContext):
         super().__init__(context)
-        self.statements = statements
+        self.functions = functions
 
     def __eq__(self, rhs: Program) -> bool:
-        return self.statements == rhs.statements and self.context == rhs.context
+        return self.functions == rhs.functions and self.context == rhs.context
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_program(self)
+
+
+@dataclass
+class Parameter:
+    name: str
+    type_id: Type
+
+
+class Function(Ast):
+    def __init__(
+        self,
+        name: str,
+        parameters: List[Parameter],
+        return_type: Type,
+        code_block: Block,
+        context: SourceContext,
+    ):
+        super().__init__(context)
+        self._name = name
+        self._paramters = parameters
+        self._return_type = return_type
+        self._code_block = code_block
+
+    def __eq__(self, rhs: Function) -> bool:
+        print(self._name)
+        print(rhs._name)
+        return (
+            self._name == rhs._name
+            and self._paramters == rhs._paramters
+            and self._return_type == rhs._return_type
+            and self._code_block == rhs._code_block
+        )
+
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visit_function(self)
 
 
 class Block(Ast):
