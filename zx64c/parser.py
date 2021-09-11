@@ -35,6 +35,7 @@ from abc import ABC
 from typing import List
 
 from zx64c.scanner import Token, TokenCategory
+from zx64c.types import Type
 from zx64c.ast import (
     SourceContext,
     Ast,
@@ -250,7 +251,7 @@ class Parser:
                 context,
             )
 
-    def _parse_type(self) -> str:
+    def _parse_type(self) -> Type:
         context = self._make_context()
         possible_type_tokens = [
             TokenCategory.BOOL,
@@ -261,7 +262,7 @@ class Parser:
         if self._current_token.category in possible_type_tokens:
             value = self._current_token.lexeme
             self._advance()
-            return value
+            return Type(value)
         else:
             raise UnexpectedToken(
                 possible_type_tokens,

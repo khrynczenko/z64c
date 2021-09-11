@@ -9,6 +9,7 @@ from zx64c.ast import (
     Block,
     If,
     Print,
+    Let,
     Assignment,
     Addition,
     Negation,
@@ -17,15 +18,22 @@ from zx64c.ast import (
     Bool,
 )
 from zx64c.ast import AstVisitor
-from zx64c.types import Type
+from zx64c.types import Type, VOID, U8, BOOL
 
 
 class Environment:
     def __init__(self):
         self._variable_types = {}
+        self._defined_types = [VOID, U8, BOOL]
 
-    def add_variable(self, name: str, variable_type: Type):
-        self._variable_types[name] = variable_type
+    def add_type(self, udt: Type):
+        self._defined_types.append(udt)
+
+    def add_variable(self, name: str, var_type: Type, context: SourceContext):
+        if var_type not in self._defined_types:
+            raise UndefinedTypeError(var_type, context)
+
+        self._variable_types[name] = var_type
 
     def has_variable(self, name):
         return name in self._variable_types
@@ -82,6 +90,24 @@ class TypeMismatch(TypecheckError):
         )
 
 
+class AlreadyDefinedVariableError(TypecheckError):
+    def __init__(self, var_name: str, context: SourceContext):
+        super().__init__(context)
+        self._var_name = var_name
+
+    def _make_error_message(self) -> str:
+        return f"Variable `{self._var_name}` is already defined."
+
+
+class UndefinedTypeError(TypecheckError):
+    def __init__(self, var_type: Type, context: SourceContext):
+        super().__init__(context)
+        self._var_type = var_type
+
+    def _make_error_message(self) -> str:
+        return f"Undefined type {self._var_type}."
+
+
 class UndefinedVariable(TypecheckError):
     def __init__(self, variable_name: str, context: SourceContext):
         super().__init__(context)
@@ -108,7 +134,7 @@ class TypecheckerVisitor(AstVisitor[Type]):
         if type_errors:
             raise CombinedTypecheckError(type_errors)
 
-        return Type.VOID
+        return VOID
 
     def visit_block(self, node: Block) -> Type:
         type_errors: [TypecheckError] = []
@@ -121,51 +147,62 @@ class TypecheckerVisitor(AstVisitor[Type]):
         if type_errors:
             raise CombinedTypecheckError(type_errors)
 
-        return Type.VOID
+        return VOID
 
     def visit_if(self, node: If) -> Type:
         condition_type = node.condition.visit(self)
-        if condition_type is not Type.BOOL:
-            raise TypeMismatch(Type.BOOL, condition_type, node.condition.context)
+        if condition_type != BOOL:
+            raise TypeMismatch(BOOL, condition_type, node.condition.context)
 
         node.consequence.visit(self)
 
-        return Type.VOID
+        return VOID
 
     def visit_print(self, node: Print) -> Type:
         node.expression.visit(self)
 
-        return Type.VOID
+        return VOID
+
+    def visit_let(self, node: Let) -> Type:
+        rhs_type = node.rhs.visit(self)
+
+        if self._environment.has_variable(node.name):
+            raise AlreadyDefinedVariableError(node.name, node.context)
+
+        self._environment.add_variable(node.name, node.var_type, node.context)
+
+        variable_type = self._environment.get_variable_type(node.name, node.context)
+        if variable_type != rhs_type:
+            raise TypeMismatch(variable_type, rhs_type, node.context)
+
+        return VOID
 
     def visit_assignment(self, node: Assignment) -> Type:
         rhs_type = node.rhs.visit(self)
 
-        if not self._environment.has_variable(node.name):
-            self._environment.add_variable(node.name, rhs_type)
-
         variable_type = self._environment.get_variable_type(node.name, node.context)
-        if variable_type is not rhs_type:
+        if variable_type != rhs_type:
             raise TypeMismatch(variable_type, rhs_type, node.context)
 
-        return Type.VOID
+        return VOID
 
     def visit_addition(self, node: Addition) -> Type:
         lhs_type = node.lhs.visit(self)
         rhs_type = node.rhs.visit(self)
 
-        if lhs_type is not Type.U8:
-            raise TypeMismatch(Type.U8, lhs_type, node.lhs.context)
+        if lhs_type != U8:
+            raise TypeMismatch(U8, lhs_type, node.lhs.context)
 
-        if rhs_type is not Type.U8:
-            raise TypeMismatch(Type.U8, rhs_type, node.rhs.context)
+        if rhs_type != U8:
+            raise TypeMismatch(U8, rhs_type, node.rhs.context)
 
-        return Type.U8
+        return U8
 
     def visit_negation(self, node: Negation) -> Type:
         expression_type = node.expression.visit(self)
 
-        if expression_type is not Type.U8:
-            raise TypeMismatch(Type.U8, expression_type, node.context)
+        if expression_type != U8:
+            raise TypeMismatch(U8, expression_type, node.context)
 
         return expression_type
 
@@ -173,7 +210,7 @@ class TypecheckerVisitor(AstVisitor[Type]):
         return self._environment.get_variable_type(node.value, node.context)
 
     def visit_unsignedint(self, node: Unsignedint) -> Type:
-        return Type.U8
+        return U8
 
     def visit_bool(self, node: Bool) -> Type:
-        return Type.BOOL
+        return BOOL

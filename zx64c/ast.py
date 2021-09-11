@@ -5,6 +5,8 @@ import abc
 from typing import List, Text, TypeVar, Generic
 from abc import ABC
 
+from zx64c.types import Type
+
 T = TypeVar("T")
 
 
@@ -140,16 +142,16 @@ class Print(Ast):
 
 
 class Let(Ast):
-    def __init__(self, name: str, type_name: str, rhs: Ast, context: SourceContext):
+    def __init__(self, name: str, var_type: Type, rhs: Ast, context: SourceContext):
         super().__init__(context)
         self.name = name
-        self.type_name = type_name
+        self.var_type = var_type
         self.rhs = rhs
 
-    def __eq__(self, rhs: Assignment) -> bool:
+    def __eq__(self, rhs: Let) -> bool:
         return (
             self.name == rhs.name
-            and self.type_name == rhs.type_name
+            and self.var_type == rhs.var_type
             and self.rhs == rhs.rhs
             and self.context == rhs.context
         )

@@ -16,6 +16,7 @@ from tests.ast import (
 )
 from zx64c.scanner import Token, TokenCategory
 from zx64c.parser import Parser, UnexpectedToken
+from zx64c.types import Type
 
 
 def build_test_tokens_from_categories(categories: List[TokenCategory]):
@@ -60,8 +61,7 @@ def test_parsing_let_unsigned_int():
 
     parser = Parser(tokens)
     ast = parser.parse()
-    expected_ast = ProgramTC([LetTC("x", "u8", UnsignedintTC(10))])
-    print(ast.statements[0].type_name)
+    expected_ast = ProgramTC([LetTC("x", Type("u8"), UnsignedintTC(10))])
     assert ast == expected_ast
 
 
