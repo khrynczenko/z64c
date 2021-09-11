@@ -23,6 +23,7 @@ class TokenCategory(enum.Enum):
     DEDENT = enum.auto()
 
     # KEYWORDS
+    DEF = enum.auto()
     PRINT = enum.auto()
     TRUE = enum.auto()
     FALSE = enum.auto()
@@ -32,6 +33,8 @@ class TokenCategory(enum.Enum):
     IF = enum.auto()
 
     COLON = enum.auto()
+    COMMA = enum.auto()
+    ARROW = enum.auto()
 
     # PARENTHESES
     LEFT_PAREN = enum.auto()
@@ -53,6 +56,7 @@ class TokenCategory(enum.Enum):
             TokenCategory.NEWLINE: "\\n",
             TokenCategory.INDENT: "INDENT",
             TokenCategory.DEDENT: "DEDENT",
+            TokenCategory.DEF: "def",
             TokenCategory.PRINT: "print",
             TokenCategory.TRUE: "true",
             TokenCategory.FALSE: "false",
@@ -61,6 +65,8 @@ class TokenCategory(enum.Enum):
             TokenCategory.LET: "let",
             TokenCategory.IF: "if",
             TokenCategory.COLON: ":",
+            TokenCategory.COMMA: ",",
+            TokenCategory.ARROW: "->",
             TokenCategory.LEFT_PAREN: "(",
             TokenCategory.RIGHT_PAREN: ")",
             TokenCategory.PLUS: "+",
@@ -74,6 +80,7 @@ class TokenCategory(enum.Enum):
 
 
 KEYWORD_CATEGORIES = {
+    "def": TokenCategory.DEF,
     "print": TokenCategory.PRINT,
     "true": TokenCategory.TRUE,
     "false": TokenCategory.FALSE,
@@ -184,6 +191,11 @@ class Scanner:
                     self._consume_one_character_symbol("+", TokenCategory.PLUS)
                 )
 
+            elif remaining_source.startswith("->"):
+                self._produced_tokens.append(
+                    self._consume_two_character_symbol("->", TokenCategory.ARROW)
+                )
+
             elif remaining_source.startswith("-"):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol("-", TokenCategory.MINUS)
@@ -202,6 +214,11 @@ class Scanner:
             elif remaining_source.startswith(":"):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol(":", TokenCategory.COLON)
+                )
+
+            elif remaining_source.startswith(","):
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol(",", TokenCategory.COMMA)
                 )
 
             elif remaining_source[0].isdigit():

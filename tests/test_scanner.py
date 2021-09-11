@@ -117,6 +117,28 @@ def test_scanner_produces_colon():
     ]
 
 
+def test_scanner_produces_comma():
+    source = "  ,  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.COMMA, ","),
+        Token(1, 6, TokenCategory.EOF, ""),
+    ]
+
+
+def test_scanner_produces_arrow():
+    source = "  ->  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.ARROW, "->"),
+        Token(1, 7, TokenCategory.EOF, ""),
+    ]
+
+
 def test_scanner_produces_unsignedint():
     source = "  123  "
     scanner = Scanner(source)
@@ -124,6 +146,17 @@ def test_scanner_produces_unsignedint():
 
     assert tokens == [
         Token(1, 3, TokenCategory.UNSIGNEDINT, "123"),
+        Token(1, 8, TokenCategory.EOF, ""),
+    ]
+
+
+def test_scanner_produces_def_keyword():
+    source = "  def  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.DEF, "def"),
         Token(1, 8, TokenCategory.EOF, ""),
     ]
 

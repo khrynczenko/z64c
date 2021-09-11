@@ -5,7 +5,12 @@ recursive descent parsing.
 
 Below is the language grammar.
 
-<program> -> <statement>* EOF
+<program> -> <program_statement>* EOF
+<program_statement> -> <function>
+<function> ->
+    DEF IDENTIFIER LEFT_PAREN <params> RIGHT_PAREN ARROW <type> COLON NEWLINE <block>
+<parameteres> -> (<parameter>)? ( COMMA <parameter>)*
+<parameter> -> IDENTIFIER COLON <type>
 <statement> -> <simple_statement> NEWLINE
 <statement> -> <compound_statement>
 <simple_statement> -> <print>
