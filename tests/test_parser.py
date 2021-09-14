@@ -8,6 +8,7 @@ from tests.ast import (
     PrintTC,
     LetTC,
     AssignmentTC,
+    ReturnTC,
     AdditionTC,
     NegationTC,
     UnsignedintTC,
@@ -297,6 +298,19 @@ def test_parsing_assignment_complex_arithmetic_expression():
             ),
         )
     )
+    assert ast == expected_ast
+
+
+def test_parsing_return():
+    tokens = make_tokens_inside_main(
+        make_arbitrary_token(TokenCategory.RETURN),
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "10"),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+    )
+
+    parser = Parser(tokens)
+    ast = parser.parse()
+    expected_ast = make_ast_inside_main(ReturnTC(UnsignedintTC(10)))
     assert ast == expected_ast
 
 

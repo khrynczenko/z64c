@@ -213,6 +213,18 @@ class Assignment(Ast):
         return v.visit_assignment(self)
 
 
+class Return(Ast):
+    def __init__(self, expr: Ast, context: SourceContext):
+        super().__init__(context)
+        self.expr = expr
+
+    def __eq__(self, rhs: Return) -> bool:
+        return self.expr == rhs.expr
+
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visit_return(self)
+
+
 class Addition(Ast):
     def __init__(self, lhs: Ast, rhs: Ast, context: SourceContext):
         super().__init__(context)

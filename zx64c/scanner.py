@@ -24,6 +24,7 @@ class TokenCategory(enum.Enum):
 
     # KEYWORDS
     DEF = enum.auto()
+    RETURN = enum.auto()
     PRINT = enum.auto()
     TRUE = enum.auto()
     FALSE = enum.auto()
@@ -57,6 +58,7 @@ class TokenCategory(enum.Enum):
             TokenCategory.INDENT: "INDENT",
             TokenCategory.DEDENT: "DEDENT",
             TokenCategory.DEF: "def",
+            TokenCategory.RETURN: "return",
             TokenCategory.PRINT: "print",
             TokenCategory.TRUE: "true",
             TokenCategory.FALSE: "false",
@@ -81,6 +83,7 @@ class TokenCategory(enum.Enum):
 
 KEYWORD_CATEGORIES = {
     "def": TokenCategory.DEF,
+    "return": TokenCategory.RETURN,
     "print": TokenCategory.PRINT,
     "true": TokenCategory.TRUE,
     "false": TokenCategory.FALSE,

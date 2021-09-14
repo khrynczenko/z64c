@@ -16,11 +16,13 @@ Below is the language grammar.
 <simple_statement> -> <print>
 <simple_statement> -> <assignment>
 <simple_statement> -> <let>
+<simple_statement> -> <return>
 <compound_statement> -> <if>
 <if> -> IF <expression> COLON NEWLINE <block>
 <block> INDENT <statement>* DEDENT
 <print> -> PRINT LEFT_PAREN <expression> RIGHT_PAREN
 <let> -> LET IDENTIFIER COLON <type> ASSIGN <expression>
+<return> -> RETURN <expression>
 <assignment> -> IDENTIFIER ASSIGN <expression>
 <expression> -> <term> (PLUS <term>)*
 <term> -> <factor> (STAR <factor>)*
@@ -51,6 +53,7 @@ from zx64c.ast import (
     If,
     Print,
     Let,
+    Return,
     Assignment,
     Addition,
     Negation,
@@ -186,6 +189,10 @@ class Parser:
             assignment_statement = self._parse_assignment()
             self._consume(TokenCategory.NEWLINE)
             return assignment_statement
+        elif categories[0] is TokenCategory.RETURN:
+            return_statement = self._parse_return()
+            self._consume(TokenCategory.NEWLINE)
+            return return_statement
         else:
             expression = self._parse_expression()
             self._consume(TokenCategory.NEWLINE)
@@ -237,6 +244,12 @@ class Parser:
         self._consume(TokenCategory.ASSIGN)
         expression = self._parse_expression()
         return Assignment(name_token.lexeme, expression, context)
+
+    def _parse_return(self) -> Ast:
+        context = self._make_context()
+        self._consume(TokenCategory.RETURN)
+        expression = self._parse_expression()
+        return Return(expression, context)
 
     def _parse_expression(self) -> Ast:
         lhs = self._parse_term()

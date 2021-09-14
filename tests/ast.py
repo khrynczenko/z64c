@@ -12,6 +12,7 @@ from zx64c.ast import (
     Block,
     If,
     Let,
+    Return,
     Print,
     Assignment,
     Addition,
@@ -30,6 +31,7 @@ FunctionTC = functools.partial(Function, context=TEST_CONTEXT)
 BlockTC = functools.partial(Block, context=TEST_CONTEXT)
 IfTC = functools.partial(If, context=TEST_CONTEXT)
 LetTC = functools.partial(Let, context=TEST_CONTEXT)
+ReturnTC = functools.partial(Return, context=TEST_CONTEXT)
 PrintTC = functools.partial(Print, context=TEST_CONTEXT)
 AssignmentTC = functools.partial(Assignment, context=TEST_CONTEXT)
 AdditionTC = functools.partial(Addition, context=TEST_CONTEXT)

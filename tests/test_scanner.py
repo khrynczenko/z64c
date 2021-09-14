@@ -161,6 +161,17 @@ def test_scanner_produces_def_keyword():
     ]
 
 
+def test_scanner_produces_return_keyword():
+    source = "  return  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.RETURN, "return"),
+        Token(1, 11, TokenCategory.EOF, ""),
+    ]
+
+
 def test_scanner_produces_print_keyword():
     source = "  print  "
     scanner = Scanner(source)
