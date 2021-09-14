@@ -20,9 +20,9 @@ from zx64c.typechecker import (
     TypecheckerVisitor,
     Environment,
     CombinedTypecheckError,
-    TypeMismatch,
+    TypeMismatchError,
     UndefinedTypeError,
-    UndefinedVariable,
+    UndefinedVariableError,
 )
 
 
@@ -62,8 +62,8 @@ def test_addition_node_type_mismatch(lhs_node, rhs_node, expected_type, got_type
 
     try:
         ast.visit(TypecheckerVisitor())
-    except TypeMismatch as e:
-        assert e == TypeMismatch(expected_type, got_type, TEST_CONTEXT)
+    except TypeMismatchError as e:
+        assert e == TypeMismatchError(expected_type, got_type, TEST_CONTEXT)
         return
 
     assert False, "Expected type mismatch exception not raised"
@@ -78,8 +78,8 @@ def test_addition_node_type_error_propagates(lhs_node, rhs_node):
 
     try:
         ast.visit(TypecheckerVisitor())
-    except UndefinedVariable as e:
-        assert e == UndefinedVariable("x", TEST_CONTEXT)
+    except UndefinedVariableError as e:
+        assert e == UndefinedVariableError("x", TEST_CONTEXT)
         return
 
     assert False, "Expected undefined variable exception not raised"
@@ -96,7 +96,7 @@ def test_addition_node_type_mismatch_with_variable():
     try:
         ast.visit(TypecheckerVisitor())
     except CombinedTypecheckError as e:
-        e == CombinedTypecheckError([TypeMismatch(U8, BOOL, TEST_CONTEXT)])
+        e == CombinedTypecheckError([TypeMismatchError(U8, BOOL, TEST_CONTEXT)])
         return
 
     assert False, "Expected type error exception not raised"
@@ -118,8 +118,8 @@ def test_identifier_node_type_with_undefined_variable():
 
     try:
         ast.visit(TypecheckerVisitor(empty_environment))
-    except UndefinedVariable as e:
-        assert e == UndefinedVariable("x", TEST_CONTEXT)
+    except UndefinedVariableError as e:
+        assert e == UndefinedVariableError("x", TEST_CONTEXT)
         return
 
     assert False, "Expected type error exception not raised"
@@ -138,8 +138,8 @@ def test_negation_node_type_mismatch():
 
     try:
         ast.visit(TypecheckerVisitor())
-    except TypeMismatch as e:
-        assert e == TypeMismatch(U8, BOOL, TEST_CONTEXT)
+    except TypeMismatchError as e:
+        assert e == TypeMismatchError(U8, BOOL, TEST_CONTEXT)
         return
 
     assert False, "Expected type error exception not raised"
@@ -169,7 +169,7 @@ def test_assignment_node_raises_mismatch():
     try:
         ast.visit(TypecheckerVisitor())
     except CombinedTypecheckError as e:
-        assert e == CombinedTypecheckError([TypeMismatch(U8, BOOL, TEST_CONTEXT)])
+        assert e == CombinedTypecheckError([TypeMismatchError(U8, BOOL, TEST_CONTEXT)])
         return
 
     assert False, "Expected type error exception not raised"
@@ -206,7 +206,7 @@ def test_let_node_raises_in_if_mismatch():
     try:
         ast.visit(TypecheckerVisitor())
     except CombinedTypecheckError as e:
-        assert e == CombinedTypecheckError([TypeMismatch(U8, BOOL, TEST_CONTEXT)])
+        assert e == CombinedTypecheckError([TypeMismatchError(U8, BOOL, TEST_CONTEXT)])
         return
 
     assert False, "Expected type error exception not raised"
@@ -228,7 +228,7 @@ def test_program_node_type_with_errors():
     try:
         ast.visit(TypecheckerVisitor())
     except CombinedTypecheckError as e:
-        assert e == CombinedTypecheckError([UndefinedVariable("y", context)])
+        assert e == CombinedTypecheckError([UndefinedVariableError("y", context)])
         return
 
     assert False, "Expected type error exception not raised"
@@ -254,8 +254,8 @@ def test_block_node_type_combines_errors():
     except CombinedTypecheckError as e:
         assert e == CombinedTypecheckError(
             [
-                UndefinedVariable("x", context),
-                UndefinedVariable("undefined", context),
+                UndefinedVariableError("x", context),
+                UndefinedVariableError("undefined", context),
             ]
         )
         return
@@ -276,8 +276,8 @@ def test_if_node_type_mismatches_on_not_bool():
 
     try:
         ast.visit(TypecheckerVisitor())
-    except TypeMismatch as e:
-        assert e == TypeMismatch(BOOL, U8, TEST_CONTEXT)
+    except TypeMismatchError as e:
+        assert e == TypeMismatchError(BOOL, U8, TEST_CONTEXT)
         return
 
     assert False, "Expected type error exception not raised"

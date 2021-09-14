@@ -15,7 +15,7 @@ from tests.ast import (
     TEST_CONTEXT,
 )
 from zx64c.scanner import Token, TokenCategory
-from zx64c.parser import Parser, UnexpectedToken
+from zx64c.parser import Parser, UnexpectedTokenError
 from zx64c.types import Type
 
 
@@ -221,8 +221,8 @@ def test_parser_raises_on_unexpected_token():
     parser = Parser(tokens)
     try:
         parser.parse()
-    except UnexpectedToken as e:
-        assert e == UnexpectedToken(
+    except UnexpectedTokenError as e:
+        assert e == UnexpectedTokenError(
             [TokenCategory.INDENT], TokenCategory.IDENTIFIER, TEST_CONTEXT
         )
         return

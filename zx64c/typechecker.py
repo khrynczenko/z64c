@@ -45,7 +45,7 @@ class Environment:
         try:
             return self._variable_types[name]
         except KeyError:
-            raise UndefinedVariable(name, context)
+            raise UndefinedVariableError(name, context)
 
 
 class TypecheckError(Exception, ABC):
@@ -76,7 +76,7 @@ class CombinedTypecheckError(TypecheckError):
         ).rstrip("\n")
 
 
-class TypeMismatch(TypecheckError):
+class TypeMismatchError(TypecheckError):
     def __init__(
         self, expected_type: Type, received_type: Type, context: SourceContext
     ):
@@ -108,7 +108,7 @@ class UndefinedTypeError(TypecheckError):
         return f"Undefined type {self._var_type}."
 
 
-class UndefinedVariable(TypecheckError):
+class UndefinedVariableError(TypecheckError):
     def __init__(self, variable_name: str, context: SourceContext):
         super().__init__(context)
         self._variable_name = variable_name
@@ -152,7 +152,7 @@ class TypecheckerVisitor(AstVisitor[Type]):
     def visit_if(self, node: If) -> Type:
         condition_type = node.condition.visit(self)
         if condition_type != BOOL:
-            raise TypeMismatch(BOOL, condition_type, node.condition.context)
+            raise TypeMismatchError(BOOL, condition_type, node.condition.context)
 
         node.consequence.visit(self)
 
@@ -173,7 +173,7 @@ class TypecheckerVisitor(AstVisitor[Type]):
 
         variable_type = self._environment.get_variable_type(node.name, node.context)
         if variable_type != rhs_type:
-            raise TypeMismatch(variable_type, rhs_type, node.context)
+            raise TypeMismatchError(variable_type, rhs_type, node.context)
 
         return VOID
 
@@ -182,7 +182,7 @@ class TypecheckerVisitor(AstVisitor[Type]):
 
         variable_type = self._environment.get_variable_type(node.name, node.context)
         if variable_type != rhs_type:
-            raise TypeMismatch(variable_type, rhs_type, node.context)
+            raise TypeMismatchError(variable_type, rhs_type, node.context)
 
         return VOID
 
@@ -191,10 +191,10 @@ class TypecheckerVisitor(AstVisitor[Type]):
         rhs_type = node.rhs.visit(self)
 
         if lhs_type != U8:
-            raise TypeMismatch(U8, lhs_type, node.lhs.context)
+            raise TypeMismatchError(U8, lhs_type, node.lhs.context)
 
         if rhs_type != U8:
-            raise TypeMismatch(U8, rhs_type, node.rhs.context)
+            raise TypeMismatchError(U8, rhs_type, node.rhs.context)
 
         return U8
 
@@ -202,7 +202,7 @@ class TypecheckerVisitor(AstVisitor[Type]):
         expression_type = node.expression.visit(self)
 
         if expression_type != U8:
-            raise TypeMismatch(U8, expression_type, node.context)
+            raise TypeMismatchError(U8, expression_type, node.context)
 
         return expression_type
 

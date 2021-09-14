@@ -71,7 +71,7 @@ class ParseError(Exception, ABC):
         return self.make_error_message() == rhs.make_error_message()
 
 
-class UnexpectedToken(ParseError):
+class UnexpectedTokenError(ParseError):
     def __init__(
         self,
         expected_tokens: [TokenCategory],
@@ -108,7 +108,9 @@ class Parser:
     def _consume(self, category: TokenCategory) -> Token:
         if self._current_token.category is not category:
             context = self._make_context()
-            raise UnexpectedToken([category], self._current_token.category, context)
+            raise UnexpectedTokenError(
+                [category], self._current_token.category, context
+            )
 
         token = self._current_token
         self._tokens = self._tokens[1:]
@@ -240,7 +242,7 @@ class Parser:
             self._advance()
             return Bool(value, context)
         else:
-            raise UnexpectedToken(
+            raise UnexpectedTokenError(
                 [
                     TokenCategory.UNSIGNEDINT,
                     TokenCategory.TRUE,
@@ -264,7 +266,7 @@ class Parser:
             self._advance()
             return Type(value)
         else:
-            raise UnexpectedToken(
+            raise UnexpectedTokenError(
                 possible_type_tokens,
                 self._current_token.category,
                 context,
