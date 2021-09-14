@@ -3,12 +3,13 @@ import pytest
 from zx64c.ast import SourceContext, Identifier, Assignment, Print
 from tests.ast import (
     TEST_CONTEXT,
-    ProgramTC,
+    FunctionTC,
     BlockTC,
     IfTC,
     PrintTC,
     LetTC,
     AssignmentTC,
+    ReturnTC,
     AdditionTC,
     NegationTC,
     UnsignedintTC,
@@ -21,6 +22,7 @@ from zx64c.typechecker import (
     Environment,
     CombinedTypecheckError,
     TypeMismatchError,
+    NoReturn,
     UndefinedTypeError,
     UndefinedVariableError,
 )
@@ -86,7 +88,7 @@ def test_addition_node_type_error_propagates(lhs_node, rhs_node):
 
 
 def test_addition_node_type_mismatch_with_variable():
-    ast = ProgramTC(
+    ast = BlockTC(
         [
             LetTC("x", BOOL, BoolTC(True)),
             AdditionTC(IdentifierTC("x"), UnsignedintTC(1)),
@@ -164,7 +166,7 @@ def test_assignment_node_type():
 
 
 def test_assignment_node_raises_mismatch():
-    ast = ProgramTC([LetTC("x", U8, UnsignedintTC(1)), AssignmentTC("x", BoolTC(True))])
+    ast = BlockTC([LetTC("x", U8, UnsignedintTC(1)), AssignmentTC("x", BoolTC(True))])
 
     try:
         ast.visit(TypecheckerVisitor())
@@ -196,7 +198,7 @@ def test_let_node_raises_undefined_type():
 
 
 def test_let_node_raises_in_if_mismatch():
-    ast = ProgramTC(
+    ast = BlockTC(
         [
             LetTC("x", U8, UnsignedintTC(1)),
             IfTC(BoolTC(True), AssignmentTC("x", BoolTC(True))),
@@ -213,7 +215,7 @@ def test_let_node_raises_in_if_mismatch():
 
 
 def test_program_node_type():
-    ast = ProgramTC([LetTC("x", U8, UnsignedintTC(1))])
+    ast = BlockTC([LetTC("x", U8, UnsignedintTC(1))])
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
@@ -223,7 +225,7 @@ def test_program_node_type():
 def test_program_node_type_with_errors():
     context = SourceContext(1, 5)
     identifier = Identifier("y", context)
-    ast = ProgramTC([LetTC("x", U8, UnsignedintTC(1)), PrintTC(identifier)])
+    ast = BlockTC([LetTC("x", U8, UnsignedintTC(1)), PrintTC(identifier)])
 
     try:
         ast.visit(TypecheckerVisitor())
@@ -278,6 +280,79 @@ def test_if_node_type_mismatches_on_not_bool():
         ast.visit(TypecheckerVisitor())
     except TypeMismatchError as e:
         assert e == TypeMismatchError(BOOL, U8, TEST_CONTEXT)
+        return
+
+    assert False, "Expected type error exception not raised"
+
+
+def test_function_node_with_void_return_type_without_return():
+    ast = FunctionTC(
+        "main", [], VOID, BlockTC([BoolTC(True), LetTC("x", U8, UnsignedintTC(1))])
+    )
+
+    typecheck_result = ast.visit(TypecheckerVisitor())
+
+    assert typecheck_result is VOID
+
+
+def test_function_node_with_return_type_with_return():
+    ast = FunctionTC("main", [], U8, BlockTC([ReturnTC(UnsignedintTC(1))]))
+    typecheck_result = ast.visit(TypecheckerVisitor())
+
+    assert typecheck_result is VOID
+
+
+def test_function_node_with_wrong_return_raises():
+    ast = FunctionTC("main", [], VOID, BlockTC([ReturnTC(UnsignedintTC(1))]))
+
+    try:
+        ast.visit(TypecheckerVisitor())
+    except CombinedTypecheckError as e:
+        assert e == CombinedTypecheckError([TypeMismatchError(VOID, U8, TEST_CONTEXT)])
+        return
+
+    assert False, "Expected type error exception not raised"
+
+
+def test_function_node_without_return_type_with_multiple_wrong_return_raises():
+    ast = FunctionTC(
+        "main", [], VOID, BlockTC([ReturnTC(UnsignedintTC(1)), ReturnTC(BoolTC(True))])
+    )
+
+    try:
+        ast.visit(TypecheckerVisitor())
+    except CombinedTypecheckError as e:
+        assert e == CombinedTypecheckError(
+            [
+                TypeMismatchError(VOID, U8, TEST_CONTEXT),
+                TypeMismatchError(VOID, BOOL, TEST_CONTEXT),
+            ]
+        )
+        return
+
+    assert False, "Expected type error exception not raised"
+
+
+def test_function_node_with_multiple_valid_returns():
+    ast = FunctionTC(
+        "main",
+        [],
+        U8,
+        BlockTC([ReturnTC(UnsignedintTC(1)), ReturnTC(UnsignedintTC(1))]),
+    )
+
+    typecheck_result = ast.visit(TypecheckerVisitor())
+
+    assert typecheck_result is VOID
+
+
+def test_function_node_with_return_type_without_any_return_raises_noreturn():
+    ast = FunctionTC("main", [], U8, BlockTC([]))
+
+    try:
+        ast.visit(TypecheckerVisitor())
+    except NoReturn as e:
+        assert e == NoReturn(U8, "main", TEST_CONTEXT)
         return
 
     assert False, "Expected type error exception not raised"

@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import abc
 from abc import ABC
+from copy import deepcopy
 
 from zx64c.ast import (
     SourceContext,
     Program,
+    Function,
     Block,
     If,
     Print,
     Let,
+    Return,
     Assignment,
     Addition,
     Negation,
@@ -25,9 +28,23 @@ class Environment:
     def __init__(self):
         self._variable_types = {}
         self._defined_types = [VOID, U8, BOOL]
+        self._return_type = VOID
+        self._return_has_occured = False
 
     def add_type(self, udt: Type):
         self._defined_types.append(udt)
+
+    def set_return_type(self, return_type: Type):
+        self._return_type = return_type
+
+    def get_return_type(self):
+        return self._return_type
+
+    def set_return_occured(self):
+        self._return_has_occured = True
+
+    def has_return_occured(self):
+        return self._return_has_occured
 
     def add_variable(self, name: str, var_type: Type, context: SourceContext):
         if var_type not in self._defined_types:
@@ -90,6 +107,19 @@ class TypeMismatchError(TypecheckError):
         )
 
 
+class NoReturn(TypecheckError):
+    def __init__(self, expected_type: Type, function_name: str, context: SourceContext):
+        super().__init__(context)
+        self._expected_type = expected_type
+        self._function_name = function_name
+
+    def _make_error_message(self) -> str:
+        return (
+            f"Function `{self._function_name} return type is "
+            f"{self._expected_type}, but there is no return statement inside it."
+        )
+
+
 class AlreadyDefinedVariableError(TypecheckError):
     def __init__(self, var_name: str, context: SourceContext):
         super().__init__(context)
@@ -125,15 +155,25 @@ class TypecheckerVisitor(AstVisitor[Type]):
 
     def visit_program(self, node: Program) -> Type:
         type_errors: [TypecheckError] = []
-        for statement in node.statements:
+        for function in node.functions:
             try:
-                statement.visit(self)
+                function.visit(TypecheckerVisitor(deepcopy(self._environment)))
             except TypecheckError as e:
                 type_errors.append(e)
 
         if type_errors:
             raise CombinedTypecheckError(type_errors)
 
+        return VOID
+
+    def visit_function(self, node: Function) -> Type:
+        self._environment.set_return_type(node.return_type)
+        node.code_block.visit(self)
+        if (
+            not self._environment.has_return_occured()
+            and self._environment.get_return_type() != VOID
+        ):
+            raise NoReturn(node.return_type, node.name, node.context)
         return VOID
 
     def visit_block(self, node: Block) -> Type:
@@ -183,6 +223,17 @@ class TypecheckerVisitor(AstVisitor[Type]):
         variable_type = self._environment.get_variable_type(node.name, node.context)
         if variable_type != rhs_type:
             raise TypeMismatchError(variable_type, rhs_type, node.context)
+
+        return VOID
+
+    def visit_return(self, node: Return) -> Type:
+        return_type = node.expr.visit(self)
+        function_return_type = self._environment.get_return_type()
+
+        if return_type != function_return_type:
+            raise TypeMismatchError(function_return_type, return_type, node.context)
+
+        self._environment.set_return_occured()
 
         return VOID
 

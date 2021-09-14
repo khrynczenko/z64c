@@ -15,6 +15,9 @@ class AstVisitor(ABC, Generic[T]):
     def visit_program(self, node: Program) -> T:
         pass
 
+    def visit_function(self, node: Function) -> T:
+        pass
+
     def visit_block(self, node: Block) -> T:
         pass
 
@@ -25,6 +28,9 @@ class AstVisitor(ABC, Generic[T]):
         pass
 
     def visit_let(self, node: Assignment) -> T:
+        pass
+
+    def visit_return(self, node: Return) -> T:
         pass
 
     def visit_assignment(self, node: Assignment) -> T:
@@ -94,7 +100,7 @@ class SjasmplusSnapshotProgram(Ast):
 
 
 class Program(Ast):
-    def __init__(self, functions: List[Ast], context: SourceContext):
+    def __init__(self, functions: List[Function], context: SourceContext):
         super().__init__(context)
         self.functions = functions
 
@@ -121,19 +127,17 @@ class Function(Ast):
         context: SourceContext,
     ):
         super().__init__(context)
-        self._name = name
-        self._paramters = parameters
-        self._return_type = return_type
-        self._code_block = code_block
+        self.name = name
+        self.parameters = parameters
+        self.return_type = return_type
+        self.code_block = code_block
 
     def __eq__(self, rhs: Function) -> bool:
-        print(self._name)
-        print(rhs._name)
         return (
-            self._name == rhs._name
-            and self._paramters == rhs._paramters
-            and self._return_type == rhs._return_type
-            and self._code_block == rhs._code_block
+            self.name == rhs.name
+            and self.parameters == rhs.parameters
+            and self.return_type == rhs.return_type
+            and self.code_block == rhs.code_block
         )
 
     def visit(self, v: AstVisitor[T]) -> T:
