@@ -20,9 +20,12 @@ from zx64c.types import Type, VOID, U8, BOOL
 from zx64c.typechecker import (
     TypecheckerVisitor,
     Environment,
+)
+from zx64c.typechecker.errors import (
+    AlreadyDefinedVariableError,
     CombinedTypecheckError,
     TypeMismatchError,
-    NoReturn,
+    NoReturnError,
     UndefinedTypeError,
     UndefinedVariableError,
 )
@@ -214,6 +217,25 @@ def test_let_node_raises_in_if_mismatch():
     assert False, "Expected type error exception not raised"
 
 
+def test_let_for_already_defined_variable_raises():
+    ast = BlockTC(
+        [
+            LetTC("x", U8, UnsignedintTC(1)),
+            IfTC(BoolTC(True), LetTC("x", U8, BoolTC(True))),
+        ]
+    )
+
+    try:
+        ast.visit(TypecheckerVisitor())
+    except CombinedTypecheckError as e:
+        assert e == CombinedTypecheckError(
+            [AlreadyDefinedVariableError("x", TEST_CONTEXT)]
+        )
+        return
+
+    assert False, "Expected type error exception not raised"
+
+
 def test_program_node_type():
     ast = BlockTC([LetTC("x", U8, UnsignedintTC(1))])
 
@@ -351,8 +373,8 @@ def test_function_node_with_return_type_without_any_return_raises_noreturn():
 
     try:
         ast.visit(TypecheckerVisitor())
-    except NoReturn as e:
-        assert e == NoReturn(U8, "main", TEST_CONTEXT)
+    except NoReturnError as e:
+        assert e == NoReturnError(U8, "main", TEST_CONTEXT)
         return
 
     assert False, "Expected type error exception not raised"

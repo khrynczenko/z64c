@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import abc
-from abc import ABC
 from copy import deepcopy
 
 from zx64c.ast import (
@@ -22,6 +20,15 @@ from zx64c.ast import (
 )
 from zx64c.ast import AstVisitor
 from zx64c.types import Type, VOID, U8, BOOL
+from zx64c.typechecker.errors import (
+    TypecheckError,
+    AlreadyDefinedVariableError,
+    CombinedTypecheckError,
+    TypeMismatchError,
+    NoReturnError,
+    UndefinedTypeError,
+    UndefinedVariableError,
+)
 
 
 class Environment:
@@ -65,88 +72,6 @@ class Environment:
             raise UndefinedVariableError(name, context)
 
 
-class TypecheckError(Exception, ABC):
-    def __init__(self, context: SourceContext):
-        self._context = context
-
-    def make_error_message(self) -> str:
-        return (
-            f"At line {self._context.line}, column {self._context.column}: "
-            f"{self._make_error_message()}"
-        )
-
-    @abc.abstractmethod
-    def _make_error_message(self) -> str:
-        pass
-
-    def __eq__(self, rhs: TypecheckError):
-        return self.make_error_message() == rhs.make_error_message()
-
-
-class CombinedTypecheckError(TypecheckError):
-    def __init__(self, errors: [TypecheckError]):
-        self._errors = errors
-
-    def make_error_message(self) -> str:
-        return "".join(
-            [error.make_error_message() + "\n" for error in self._errors]
-        ).rstrip("\n")
-
-
-class TypeMismatchError(TypecheckError):
-    def __init__(
-        self, expected_type: Type, received_type: Type, context: SourceContext
-    ):
-        super().__init__(context)
-        self._expected_type = expected_type
-        self._received_type = received_type
-
-    def _make_error_message(self) -> str:
-        return (
-            f"Expected type {self._expected_type}. Received type {self._received_type}."
-        )
-
-
-class NoReturn(TypecheckError):
-    def __init__(self, expected_type: Type, function_name: str, context: SourceContext):
-        super().__init__(context)
-        self._expected_type = expected_type
-        self._function_name = function_name
-
-    def _make_error_message(self) -> str:
-        return (
-            f"Function `{self._function_name} return type is "
-            f"{self._expected_type}, but there is no return statement inside it."
-        )
-
-
-class AlreadyDefinedVariableError(TypecheckError):
-    def __init__(self, var_name: str, context: SourceContext):
-        super().__init__(context)
-        self._var_name = var_name
-
-    def _make_error_message(self) -> str:
-        return f"Variable `{self._var_name}` is already defined."
-
-
-class UndefinedTypeError(TypecheckError):
-    def __init__(self, var_type: Type, context: SourceContext):
-        super().__init__(context)
-        self._var_type = var_type
-
-    def _make_error_message(self) -> str:
-        return f"Undefined type {self._var_type}."
-
-
-class UndefinedVariableError(TypecheckError):
-    def __init__(self, variable_name: str, context: SourceContext):
-        super().__init__(context)
-        self._variable_name = variable_name
-
-    def _make_error_message(self) -> str:
-        return f"Undefined variable {self._variable_name}."
-
-
 class TypecheckerVisitor(AstVisitor[Type]):
     def __init__(self, environment: Environment = None):
         if environment is None:
@@ -173,7 +98,7 @@ class TypecheckerVisitor(AstVisitor[Type]):
             not self._environment.has_return_occured()
             and self._environment.get_return_type() != VOID
         ):
-            raise NoReturn(node.return_type, node.name, node.context)
+            raise NoReturnError(node.return_type, node.name, node.context)
         return VOID
 
     def visit_block(self, node: Block) -> Type:
