@@ -1,6 +1,6 @@
 import pytest
 
-from zx64c.ast import SourceContext, Identifier, Assignment, Print
+from zx64c.ast import SourceContext, Identifier, Assignment, Print, Parameter
 from tests.ast import (
     TEST_CONTEXT,
     FunctionTC,
@@ -19,7 +19,8 @@ from tests.ast import (
 from zx64c.types import Type, VOID, U8, BOOL
 from zx64c.typechecker import (
     TypecheckerVisitor,
-    Environment,
+    Scope,
+    EnvironmentStack,
 )
 from zx64c.typechecker.errors import (
     AlreadyDefinedVariableError,
@@ -109,8 +110,10 @@ def test_addition_node_type_mismatch_with_variable():
 
 def test_identifier_node_type():
     ast = IdentifierTC("x")
-    environment = Environment()
-    environment.add_variable("x", U8, TEST_CONTEXT)
+    scope = Scope()
+    scope.add_variable("x", U8, TEST_CONTEXT)
+    environment = EnvironmentStack()
+    environment.push_scope(scope)
 
     typecheck_result = ast.visit(TypecheckerVisitor(environment))
 
@@ -119,10 +122,10 @@ def test_identifier_node_type():
 
 def test_identifier_node_type_with_undefined_variable():
     ast = IdentifierTC("x")
-    empty_environment = Environment()
+    empty_scope = Scope()
 
     try:
-        ast.visit(TypecheckerVisitor(empty_environment))
+        ast.visit(TypecheckerVisitor(empty_scope))
     except UndefinedVariableError as e:
         assert e == UndefinedVariableError("x", TEST_CONTEXT)
         return
@@ -159,11 +162,11 @@ def test_print_node_type():
 
 
 def test_assignment_node_type():
-    environment = Environment()
-    environment.add_variable("x", U8, TEST_CONTEXT)
+    scope = Scope()
+    scope.add_variable("x", U8, TEST_CONTEXT)
     ast = AssignmentTC("x", UnsignedintTC(1))
 
-    typecheck_result = ast.visit(TypecheckerVisitor(environment))
+    typecheck_result = ast.visit(TypecheckerVisitor(scope))
 
     assert typecheck_result is VOID
 
@@ -181,18 +184,23 @@ def test_assignment_node_raises_mismatch():
 
 
 def test_let_node():
+    environment = EnvironmentStack()
+    environment.push_scope(Scope())
     ast = LetTC("x", U8, UnsignedintTC(1))
 
-    typecheck_result = ast.visit(TypecheckerVisitor())
+    typecheck_result = ast.visit(TypecheckerVisitor(environment))
 
     assert typecheck_result is VOID
+    assert environment.get_variable_type("x", TEST_CONTEXT) == U8
 
 
 def test_let_node_raises_undefined_type():
+    environment = EnvironmentStack()
+    environment.push_scope(Scope())
     ast = LetTC("x", Type("unknown"), UnsignedintTC(1))
 
     try:
-        ast.visit(TypecheckerVisitor())
+        ast.visit(TypecheckerVisitor(environment))
     except UndefinedTypeError as e:
         assert e == UndefinedTypeError(Type("unknown"), TEST_CONTEXT)
         return
@@ -375,6 +383,40 @@ def test_function_node_with_return_type_without_any_return_raises_noreturn():
         ast.visit(TypecheckerVisitor())
     except NoReturnError as e:
         assert e == NoReturnError(U8, "main", TEST_CONTEXT)
+        return
+
+    assert False, "Expected type error exception not raised"
+
+
+def test_function_node_parameters_can_be_accessed():
+    environment = EnvironmentStack()
+    environment.push_scope(Scope())
+    ast = FunctionTC(
+        "main", [Parameter("x", U8)], VOID, BlockTC([PrintTC(IdentifierTC("x"))])
+    )
+
+    typecheck_result = ast.visit(TypecheckerVisitor(environment))
+
+    assert typecheck_result == VOID
+
+
+def test_inner_code_blocks_dont_leak_variables():
+    ast = FunctionTC(
+        "main",
+        [],
+        VOID,
+        BlockTC(
+            [
+                IfTC(BoolTC(True), BlockTC([LetTC("x", U8, UnsignedintTC(1))])),
+                PrintTC(IdentifierTC("x")),
+            ]
+        ),
+    )
+
+    try:
+        ast.visit(TypecheckerVisitor())
+    except CombinedTypecheckError as e:
+        assert e == CombinedTypecheckError([UndefinedVariableError("x", TEST_CONTEXT)])
         return
 
     assert False, "Expected type error exception not raised"

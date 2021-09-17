@@ -1,8 +1,9 @@
-let x: u8 = 3
-let y: bool = true
-let z: bool = false
-if y:
-    print(49 + x)
+def main() -> void:
+    let x: u8 = 3
+    let y: bool = true
+    let z: bool = false
+    if y:
+        print(49 + x)
 
-    print(50)
+        print(50)
 
