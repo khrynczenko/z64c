@@ -151,15 +151,11 @@ class TypecheckerVisitor(AstVisitor[Type]):
         return VOID
 
     def visit_if(self, node: If) -> Type:
-        self._environment.push_scope(Scope())
-
         condition_type = node.condition.visit(self)
         if condition_type != BOOL:
             raise TypeMismatchError(BOOL, condition_type, node.condition.context)
 
         node.consequence.visit(self)
-
-        self._environment.pop_scope()
         return VOID
 
     def visit_print(self, node: Print) -> Type:

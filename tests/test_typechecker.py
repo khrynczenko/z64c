@@ -296,9 +296,13 @@ def test_block_node_type_combines_errors():
 
 
 def test_if_node_type():
+    scope = Scope()
+    environment = EnvironmentStack()
+    environment.push_scope(scope)
+
     ast = IfTC(BoolTC(True), LetTC("x", U8, UnsignedintTC(1)))
 
-    typecheck_result = ast.visit(TypecheckerVisitor())
+    typecheck_result = ast.visit(TypecheckerVisitor(environment))
 
     assert typecheck_result is VOID
 
