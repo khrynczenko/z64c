@@ -28,6 +28,7 @@ class TokenCategory(enum.Enum):
     PRINT = enum.auto()
     TRUE = enum.auto()
     FALSE = enum.auto()
+    VOID = enum.auto()
     BOOL = enum.auto()
     U8 = enum.auto()
     LET = enum.auto()
@@ -40,6 +41,8 @@ class TokenCategory(enum.Enum):
     # PARENTHESES
     LEFT_PAREN = enum.auto()
     RIGHT_PAREN = enum.auto()
+    LEFT_BRACKET = enum.auto()
+    RIGHT_BRACKET = enum.auto()
 
     # BINARY OP
     PLUS = enum.auto()
@@ -62,6 +65,7 @@ class TokenCategory(enum.Enum):
             TokenCategory.PRINT: "print",
             TokenCategory.TRUE: "true",
             TokenCategory.FALSE: "false",
+            TokenCategory.VOID: "void",
             TokenCategory.BOOL: "bool",
             TokenCategory.U8: "u8",
             TokenCategory.LET: "let",
@@ -71,6 +75,8 @@ class TokenCategory(enum.Enum):
             TokenCategory.ARROW: "->",
             TokenCategory.LEFT_PAREN: "(",
             TokenCategory.RIGHT_PAREN: ")",
+            TokenCategory.LEFT_BRACKET: "(",
+            TokenCategory.RIGHT_BRACKET: ")",
             TokenCategory.PLUS: "+",
             TokenCategory.MINUS: "-",
             TokenCategory.EQUAL: "==",
@@ -87,6 +93,7 @@ KEYWORD_CATEGORIES = {
     "print": TokenCategory.PRINT,
     "true": TokenCategory.TRUE,
     "false": TokenCategory.FALSE,
+    "void": TokenCategory.VOID,
     "bool": TokenCategory.BOOL,
     "u8": TokenCategory.U8,
     "let": TokenCategory.LET,
@@ -187,6 +194,16 @@ class Scanner:
             elif remaining_source.startswith(")"):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol(")", TokenCategory.RIGHT_PAREN)
+                )
+
+            elif remaining_source.startswith("["):
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol("[", TokenCategory.LEFT_BRACKET)
+                )
+
+            elif remaining_source.startswith("]"):
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol("]", TokenCategory.RIGHT_BRACKET)
                 )
 
             elif remaining_source.startswith("+"):

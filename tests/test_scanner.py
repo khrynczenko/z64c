@@ -62,6 +62,28 @@ def test_scanner_produces_right_paren():
     ]
 
 
+def test_scanner_produces_left_bracket():
+    source = "  [  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.LEFT_BRACKET, "["),
+        Token(1, 6, TokenCategory.EOF, ""),
+    ]
+
+
+def test_scanner_produces_right_bracket():
+    source = "  ]  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.RIGHT_BRACKET, "]"),
+        Token(1, 6, TokenCategory.EOF, ""),
+    ]
+
+
 def test_scanner_produces_plus():
     source = "  +  "
     scanner = Scanner(source)
@@ -213,6 +235,17 @@ def test_scanner_produces_identifier():
     assert tokens == [
         Token(1, 3, TokenCategory.IDENTIFIER, "_identifier_"),
         Token(1, 17, TokenCategory.EOF, ""),
+    ]
+
+
+def test_scanner_produces_void():
+    source = "  void  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.VOID, "void"),
+        Token(1, 9, TokenCategory.EOF, ""),
     ]
 
 

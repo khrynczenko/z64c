@@ -19,7 +19,7 @@ from tests.ast import (
 from zx64c.ast import Parameter
 from zx64c.scanner import Token, TokenCategory
 from zx64c.parser import Parser, UnexpectedTokenError
-from zx64c.types import Type, VOID, U8, BOOL
+from zx64c.types import Type, Void, U8, Bool
 
 
 def build_test_tokens_from_categories(categories: List[TokenCategory]):
@@ -41,7 +41,7 @@ def make_tokens_inside_main(*args):
         make_arbitrary_token(TokenCategory.LEFT_PAREN),
         make_arbitrary_token(TokenCategory.RIGHT_PAREN),
         make_arbitrary_token(TokenCategory.ARROW),
-        make_token_with_lexeme(TokenCategory.IDENTIFIER, "void"),
+        make_token_with_lexeme(TokenCategory.VOID, "void"),
         make_arbitrary_token(TokenCategory.COLON),
         make_arbitrary_token(TokenCategory.NEWLINE),
         make_arbitrary_token(TokenCategory.INDENT),
@@ -53,7 +53,7 @@ def make_tokens_inside_main(*args):
 
 
 def make_ast_inside_main(*args):
-    return ProgramTC([FunctionTC("main", [], VOID, BlockTC([*args]))])
+    return ProgramTC([FunctionTC("main", [], Void(), BlockTC([*args]))])
 
 
 def test_testing_utilities():
@@ -85,7 +85,7 @@ def test_parsing_function_with_not_arguments():
         make_arbitrary_token(TokenCategory.LEFT_PAREN),
         make_arbitrary_token(TokenCategory.RIGHT_PAREN),
         make_arbitrary_token(TokenCategory.ARROW),
-        make_token_with_lexeme(TokenCategory.IDENTIFIER, "void"),
+        make_token_with_lexeme(TokenCategory.VOID, "void"),
         make_arbitrary_token(TokenCategory.COLON),
         make_arbitrary_token(TokenCategory.NEWLINE),
         make_arbitrary_token(TokenCategory.INDENT),
@@ -99,7 +99,7 @@ def test_parsing_function_with_not_arguments():
 
     name = "main"
     parameters = []
-    return_type = VOID
+    return_type = Void()
     code_block = BlockTC([UnsignedintTC(1)])
     assert ast == ProgramTC([FunctionTC(name, parameters, return_type, code_block)])
 
@@ -111,10 +111,10 @@ def test_parsing_function_with_one_arguments():
         make_arbitrary_token(TokenCategory.LEFT_PAREN),
         make_token_with_lexeme(TokenCategory.IDENTIFIER, "x"),
         make_arbitrary_token(TokenCategory.COLON),
-        make_token_with_lexeme(TokenCategory.IDENTIFIER, "u8"),
+        make_token_with_lexeme(TokenCategory.U8, "u8"),
         make_arbitrary_token(TokenCategory.RIGHT_PAREN),
         make_arbitrary_token(TokenCategory.ARROW),
-        make_token_with_lexeme(TokenCategory.IDENTIFIER, "void"),
+        make_token_with_lexeme(TokenCategory.VOID, "void"),
         make_arbitrary_token(TokenCategory.COLON),
         make_arbitrary_token(TokenCategory.NEWLINE),
         make_arbitrary_token(TokenCategory.INDENT),
@@ -127,8 +127,8 @@ def test_parsing_function_with_one_arguments():
     ast = Parser(tokens).parse()
 
     name = "main"
-    parameters = [Parameter("x", U8)]
-    return_type = VOID
+    parameters = [Parameter("x", U8())]
+    return_type = Void()
     code_block = BlockTC([UnsignedintTC(1)])
     assert ast == ProgramTC([FunctionTC(name, parameters, return_type, code_block)])
 
@@ -140,14 +140,14 @@ def test_parsing_function_with_two_arguments():
         make_arbitrary_token(TokenCategory.LEFT_PAREN),
         make_token_with_lexeme(TokenCategory.IDENTIFIER, "x"),
         make_arbitrary_token(TokenCategory.COLON),
-        make_token_with_lexeme(TokenCategory.IDENTIFIER, "u8"),
+        make_token_with_lexeme(TokenCategory.U8, "u8"),
         make_arbitrary_token(TokenCategory.COMMA),
         make_token_with_lexeme(TokenCategory.IDENTIFIER, "y"),
         make_arbitrary_token(TokenCategory.COLON),
-        make_token_with_lexeme(TokenCategory.IDENTIFIER, "bool"),
+        make_token_with_lexeme(TokenCategory.BOOL, "bool"),
         make_arbitrary_token(TokenCategory.RIGHT_PAREN),
         make_arbitrary_token(TokenCategory.ARROW),
-        make_token_with_lexeme(TokenCategory.IDENTIFIER, "void"),
+        make_token_with_lexeme(TokenCategory.VOID, "void"),
         make_arbitrary_token(TokenCategory.COLON),
         make_arbitrary_token(TokenCategory.NEWLINE),
         make_arbitrary_token(TokenCategory.INDENT),
@@ -160,8 +160,8 @@ def test_parsing_function_with_two_arguments():
     ast = Parser(tokens).parse()
 
     name = "main"
-    parameters = [Parameter("x", U8), Parameter("y", BOOL)]
-    return_type = VOID
+    parameters = [Parameter("x", U8()), Parameter("y", Bool())]
+    return_type = Void()
     code_block = BlockTC([UnsignedintTC(1)])
     assert ast == ProgramTC([FunctionTC(name, parameters, return_type, code_block)])
 
@@ -179,7 +179,7 @@ def test_parsing_let_unsigned_int():
 
     parser = Parser(tokens)
     ast = parser.parse()
-    expected_ast = make_ast_inside_main(LetTC("x", Type("u8"), UnsignedintTC(10)))
+    expected_ast = make_ast_inside_main(LetTC("x", U8(), UnsignedintTC(10)))
     assert ast == expected_ast
 
 

@@ -17,7 +17,8 @@ from zx64c.ast import (
     Bool,
 )
 from zx64c.ast import AstVisitor
-from zx64c.types import Type, VOID, U8, BOOL
+from zx64c.types import Type, Void, U8, TypeIdentifier
+from zx64c.types import Bool as BoolT
 from zx64c.typechecker.errors import (
     TypecheckError,
     AlreadyDefinedVariableError,
@@ -28,15 +29,18 @@ from zx64c.typechecker.errors import (
     UndefinedVariableError,
 )
 
+VOID = Void()
+U8 = U8()
+BOOL = BoolT()
+
 
 class EnvironmentStack:
     def __init__(self):
         self._scopes: [Scope] = []
-        self._defined_types = [VOID, U8, BOOL]
+        self._defined_types = []
 
     @property
     def _current_scope(self) -> Scope:
-        print(len(self._scopes))
         return self._scopes[-1]
 
     def push_scope(self, scope: Scope):
@@ -45,14 +49,34 @@ class EnvironmentStack:
     def pop_scope(self):
         self._scopes.pop()
 
-    def add_type(self, udt: Type):
-        self._current_scope.append(udt)
+    def add_type(self, name: str, type_: Type):
+        self._current_scope.add_type(name, type_)
 
     def add_variable(self, name: str, var_type: Type, context: SourceContext):
-        self._current_scope.add_variable(name, var_type, context)
+        if isinstance(var_type, TypeIdentifier) and not self.has_type(var_type.name):
+            raise UndefinedTypeError(var_type, context)
+
+        if isinstance(var_type, TypeIdentifier):
+            self._current_scope.add_variable(name, self.resolve_type(var_type), context)
+        else:
+            self._current_scope.add_variable(name, var_type, context)
+
+    def has_type(self, name):
+        for scope in reversed(self._scopes):
+            if scope.has_type(name):
+                return True
+        return False
+
+    def resolve_type(self, type_identifier: TypeIdentifier) -> Type:
+        for scope in reversed(self._scopes):
+            try:
+                return scope.resolve_type(type_identifier.name)
+            except KeyError:
+                continue
+        raise RuntimeError(f"Cannot resolve type indentifier {type_identifier.name}")
 
     def has_variable(self, name):
-        for scope in self._scopes:
+        for scope in reversed(self._scopes):
             if scope.has_variable(name):
                 return True
         return False
@@ -73,24 +97,24 @@ class EnvironmentStack:
 class Scope:
     def __init__(self):
         self._variable_types = {}
-        self._defined_types = [VOID, U8, BOOL]
+        self._defined_types = {}
 
-    def add_type(self, udt: Type):
-        self._defined_types.append(udt)
+    def add_type(self, name: str, type_: Type):
+        self._defined_types[name] = type_
 
     def add_variable(self, name: str, var_type: Type, context: SourceContext):
-        if var_type not in self._defined_types:
-            raise UndefinedTypeError(var_type, context)
-
         self._variable_types[name] = var_type
+
+    def has_type(self, name):
+        return name in self._defined_types
 
     def has_variable(self, name):
         return name in self._variable_types
 
+    def resolve_type(self, type_name: str) -> Type:
+        return self._defined_types[type_name]
+
     def get_variable_type(self, name: str, context: SourceContext) -> Type:
-        """
-        :param context: used to create error in case the variable is not defined
-        """
         try:
             return self._variable_types[name]
         except KeyError:

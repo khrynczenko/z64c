@@ -24,6 +24,9 @@ class TypecheckError(Exception, ABC):
     def __eq__(self, rhs: TypecheckError):
         return self.make_error_message() == rhs.make_error_message()
 
+    def __repr__(self):
+        return self.make_error_message()
+
 
 class CombinedTypecheckError(TypecheckError):
     def __init__(self, errors: [TypecheckError]):

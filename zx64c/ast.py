@@ -6,7 +6,7 @@ from typing import List, Text, TypeVar, Generic
 from abc import ABC
 from dataclasses import dataclass
 
-from zx64c.types import Type
+from zx64c.types import Type, Callable
 
 T = TypeVar("T")
 
@@ -131,6 +131,7 @@ class Function(Ast):
         self.parameters = parameters
         self.return_type = return_type
         self.code_block = code_block
+        self.type = Callable(return_type, [p.type_id for p in parameters])
 
     def __eq__(self, rhs: Function) -> bool:
         return (

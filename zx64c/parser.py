@@ -33,7 +33,10 @@ Below is the language grammar.
 <atom> -> UNSIGNEDINT
 <atom> -> IDENTIFIER
 <atom> -> TRUE | FALSE
-<type> -> U8 | BOOL | IDENTIFIER
+<type> -> U8 | BOOL | <function_type> | IDENTIFIER
+<function_type> ->
+    IDENTIFIER LEFT_BRACKET LEFT_BRACKET
+    <param_types> RIGHT_BRACKET COMMA <type> RIGHT_BRACKET
 """
 from __future__ import annotations
 
@@ -42,7 +45,7 @@ from abc import ABC
 from typing import List
 
 from zx64c.scanner import Token, TokenCategory
-from zx64c.types import Type
+from zx64c import types
 from zx64c.ast import Parameter
 from zx64c.ast import (
     SourceContext,
@@ -306,21 +309,56 @@ class Parser:
                 context,
             )
 
-    def _parse_type(self) -> Type:
+    def _parse_type(self) -> types.Type:
         context = self._make_context()
-        possible_type_tokens = [
+        built_in_types = [
+            TokenCategory.VOID,
             TokenCategory.BOOL,
             TokenCategory.U8,
+        ]
+        possible_type_tokens = [
             TokenCategory.IDENTIFIER,
         ]
 
-        if self._current_token.category in possible_type_tokens:
+        if self._current_token.category in built_in_types:
+            to_type = {"bool": types.Bool(), "u8": types.U8(), "void": types.Void()}
             value = self._current_token.lexeme
             self._advance()
-            return Type(value)
+            return to_type[value]
+        elif (
+            len(self._tokens) > 1
+            and self._tokens[0].category is TokenCategory.IDENTIFIER
+            and self._tokens[1].category is TokenCategory.LEFT_BRACKET
+        ):
+            return self._parse_function_type(self)
+        elif self._current_token.category is TokenCategory.IDENTIFIER:
+            name = self._consume(TokenCategory.IDENTIFIER)
+            return types.TypeIdentifier(name)
         else:
             raise UnexpectedTokenError(
                 possible_type_tokens,
                 self._current_token.category,
                 context,
             )
+
+    def _parse_function_type(self) -> types.Type:
+        self._consume(TokenCategory.LEFT_BRACKET)
+        self._consume(TokenCategory.LEFT_BRACKET)
+        param_types = self._parse_param_types(self)
+        self._consume(TokenCategory.RIGHT_BRACKET)
+        return_type = self._parse_type()
+        self._consume(TokenCategory.RIGHT_PAREN)
+        return types.Callable(return_type, param_types)
+
+    def _parse_param_types(self) -> [types.Type]:
+        if self._current_token.category is TokenCategory.RIGHT_BRACKET:
+            return []
+
+        parameter_types = []
+        parameter_types.append(self._parse_type())
+
+        while self._current_token.category is TokenCategory.COMMA:
+            self._advance()
+            parameter_types.append(self._parse_type())
+
+        return parameter_types
