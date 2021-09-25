@@ -42,6 +42,9 @@ class AstVisitor(ABC, Generic[T]):
     def visit_negation(self, node: Negation) -> T:
         pass
 
+    def visit_function_call(self, node: FunctionCall) -> T:
+        pass
+
     def visit_identifier(self, node: Identifier) -> T:
         pass
 
@@ -255,6 +258,25 @@ class Negation(Ast):
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_negation(self)
+
+
+class FunctionCall(Ast):
+    def __init__(
+        self, function_name: str, arguments: List[Ast], context: SourceContext
+    ):
+        super().__init__(context)
+        self.function_name = function_name
+        self.arguments = arguments
+
+    def __eq__(self, rhs: Identifier) -> bool:
+        return (
+            self.function_name == rhs.function_name
+            and self.arguments == rhs.arguments
+            and self.context == rhs.context
+        )
+
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visit_function_call(self)
 
 
 class Identifier(Ast):

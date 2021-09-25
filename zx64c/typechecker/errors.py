@@ -90,3 +90,40 @@ class UndefinedVariableError(TypecheckError):
 
     def _make_error_message(self) -> str:
         return f"Undefined variable {self._variable_name}."
+
+
+class NotFunctionCall(TypecheckError):
+    def __init__(self, name: str, context: SourceContext):
+        super().__init__(context)
+        self._name = name
+
+    def _make_error_message(self) -> str:
+        return f"{self._name} is not a function."
+
+
+class NotEnoughArguments(TypecheckError):
+    def __init__(
+        self,
+        function_name: str,
+        arguments_count: int,
+        parameters_count: int,
+        context: SourceContext,
+    ):
+        super().__init__(context)
+        self._function_name = function_name
+        self._arguments_count = arguments_count
+        self._parameters_count = parameters_count
+
+    def _make_error_message(self) -> str:
+        return (
+            f"Not enough arguments passed to the {self._function_name}. Required "
+            f"{self._parameters_count}, provided {self._arguments_count}."
+        )
+
+
+class TooManyArguments(NotEnoughArguments):
+    def _make_error_message(self) -> str:
+        return (
+            f"Too many arguments passed to the {self._function_name}. Required "
+            f"{self._parameters_count}, provided {self._arguments_count}."
+        )

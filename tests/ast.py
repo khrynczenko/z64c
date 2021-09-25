@@ -17,6 +17,7 @@ from zx64c.ast import (
     Assignment,
     Addition,
     Negation,
+    FunctionCall,
     Unsignedint,
     Identifier,
     Bool,
@@ -36,6 +37,7 @@ PrintTC = functools.partial(Print, context=TEST_CONTEXT)
 AssignmentTC = functools.partial(Assignment, context=TEST_CONTEXT)
 AdditionTC = functools.partial(Addition, context=TEST_CONTEXT)
 NegationTC = functools.partial(Negation, context=TEST_CONTEXT)
+FunctionCallTC = functools.partial(FunctionCall, context=TEST_CONTEXT)
 UnsignedintTC = functools.partial(Unsignedint, context=TEST_CONTEXT)
 IdentifierTC = functools.partial(Identifier, context=TEST_CONTEXT)
 BoolTC = functools.partial(Bool, context=TEST_CONTEXT)

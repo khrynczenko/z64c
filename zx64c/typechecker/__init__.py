@@ -12,12 +12,13 @@ from zx64c.ast import (
     Assignment,
     Addition,
     Negation,
+    FunctionCall,
     Identifier,
     Unsignedint,
     Bool,
 )
 from zx64c.ast import AstVisitor
-from zx64c.types import Type, Void, U8, TypeIdentifier
+from zx64c.types import Type, Callable, Void, U8, TypeIdentifier
 from zx64c.types import Bool as BoolT
 from zx64c.typechecker.errors import (
     TypecheckError,
@@ -27,6 +28,9 @@ from zx64c.typechecker.errors import (
     NoReturnError,
     UndefinedTypeError,
     UndefinedVariableError,
+    NotFunctionCall,
+    NotEnoughArguments,
+    TooManyArguments,
 )
 
 VOID = Void()
@@ -240,6 +244,34 @@ class TypecheckerVisitor(AstVisitor[Type]):
             raise TypeMismatchError(U8, expression_type, node.context)
 
         return expression_type
+
+    def visit_function_call(self, node: FunctionCall) -> Type:
+        function_type = self._environment.get_variable_type(
+            node.function_name, node.context
+        )
+
+        if not isinstance(function_type, Callable):
+            raise NotFunctionCall(node.function_name, node.context)
+
+        function_type: Callable = function_type
+
+        arguments_count = len(node.arguments)
+        parameters_count = len(function_type.parameter_types)
+        if arguments_count > parameters_count:
+            raise TooManyArguments(
+                node.function_name, arguments_count, parameters_count, node.context
+            )
+        if arguments_count < parameters_count:
+            raise NotEnoughArguments(
+                node.function_name, arguments_count, parameters_count, node.context
+            )
+
+        for argument, parameter in zip(node.arguments, function_type.parameter_types):
+            arg_type = argument.visit(self)
+            if arg_type != parameter:
+                raise TypeMismatchError(parameter, arg_type, node.context)
+
+        return function_type.return_type
 
     def visit_identifier(self, node: Identifier) -> Type:
         return self._environment.get_variable_type(node.value, node.context)

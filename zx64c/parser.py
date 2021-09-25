@@ -30,10 +30,13 @@ Below is the language grammar.
 <factor> -> MINUS <factor>
 <factor> -> LEFT_PAREN <expr> RIGHT_PAREN
 <factor> -> <atom>
+<atom> -> <function_call>
 <atom> -> UNSIGNEDINT
 <atom> -> IDENTIFIER
 <atom> -> TRUE | FALSE
 <type> -> U8 | BOOL | <function_type> | IDENTIFIER
+<function_call> -> IDENTIFIER LEFT_PAREN <args> RIGHT_PAREN
+<args> -> (<expression>)? ( COMMA <expression>)*
 <function_type> ->
     IDENTIFIER LEFT_BRACKET LEFT_BRACKET
     <param_types> RIGHT_BRACKET COMMA <type> RIGHT_BRACKET
@@ -60,6 +63,7 @@ from zx64c.ast import (
     Assignment,
     Addition,
     Negation,
+    FunctionCall,
     Unsignedint,
     Identifier,
     Bool,
@@ -285,7 +289,13 @@ class Parser:
 
     def _parse_atom(self) -> Ast:
         context = self._make_context()
-        if self._current_token.category is TokenCategory.UNSIGNEDINT:
+        next_token_categories = [tok.category for tok in self._tokens[:2]]
+        if next_token_categories == [
+            TokenCategory.IDENTIFIER,
+            TokenCategory.LEFT_PAREN,
+        ]:
+            return self._parse_function_call()
+        elif self._current_token.category is TokenCategory.UNSIGNEDINT:
             value = int(self._current_token.lexeme)
             self._advance()
             return Unsignedint(value, context)
@@ -308,6 +318,22 @@ class Parser:
                 self._current_token.category,
                 context,
             )
+
+    def _parse_function_call(self) -> Ast:
+        context = self._make_context()
+        function_name = self._consume(TokenCategory.IDENTIFIER).lexeme
+        self._consume(TokenCategory.LEFT_PAREN)
+        arguments = []
+        if self._current_token.category is not TokenCategory.RIGHT_PAREN:
+            arguments.append(self._parse_expression())
+
+        while self._current_token.category is not TokenCategory.RIGHT_PAREN:
+            self._consume(TokenCategory.COMMA)
+            arguments.append(self._parse_expression())
+
+        self._consume(TokenCategory.RIGHT_PAREN)
+
+        return FunctionCall(function_name, arguments, context)
 
     def _parse_type(self) -> types.Type:
         context = self._make_context()

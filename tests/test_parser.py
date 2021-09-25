@@ -1,5 +1,7 @@
 from typing import List
 
+import pytest
+
 from tests.ast import (
     ProgramTC,
     FunctionTC,
@@ -11,6 +13,7 @@ from tests.ast import (
     ReturnTC,
     AdditionTC,
     NegationTC,
+    FunctionCallTC,
     UnsignedintTC,
     IdentifierTC,
     BoolTC,
@@ -19,7 +22,7 @@ from tests.ast import (
 from zx64c.ast import Parameter
 from zx64c.scanner import Token, TokenCategory
 from zx64c.parser import Parser, UnexpectedTokenError
-from zx64c.types import Type, Void, U8, Bool
+from zx64c.types import Void, U8, Bool
 
 
 def build_test_tokens_from_categories(categories: List[TokenCategory]):
@@ -78,7 +81,7 @@ def test_parsing_print_identifier():
     assert ast == expected_ast
 
 
-def test_parsing_function_with_not_arguments():
+def test_parsing_function_with_no_parameters():
     tokens = [
         make_arbitrary_token(TokenCategory.DEF),
         make_token_with_lexeme(TokenCategory.IDENTIFIER, "main"),
@@ -104,7 +107,7 @@ def test_parsing_function_with_not_arguments():
     assert ast == ProgramTC([FunctionTC(name, parameters, return_type, code_block)])
 
 
-def test_parsing_function_with_one_arguments():
+def test_parsing_function_with_one_parameter():
     tokens = [
         make_arbitrary_token(TokenCategory.DEF),
         make_token_with_lexeme(TokenCategory.IDENTIFIER, "main"),
@@ -133,7 +136,7 @@ def test_parsing_function_with_one_arguments():
     assert ast == ProgramTC([FunctionTC(name, parameters, return_type, code_block)])
 
 
-def test_parsing_function_with_two_arguments():
+def test_parsing_function_with_two_parameters():
     tokens = [
         make_arbitrary_token(TokenCategory.DEF),
         make_token_with_lexeme(TokenCategory.IDENTIFIER, "main"),
@@ -331,6 +334,39 @@ def test_parsing_if_statement():
     expected_ast = make_ast_inside_main(
         IfTC(BoolTC(True), BlockTC([IdentifierTC("y")]))
     )
+    assert ast == expected_ast
+
+
+@pytest.mark.parametrize(
+    "argument_token_list, resulted_argument_ast",
+    [
+        ([], []),
+        # ^ test function call with no arguments
+        ([make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "1")], [UnsignedintTC(1)]),
+        # ^ test function call with one argument
+        (
+            [
+                make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "1"),
+                make_arbitrary_token(TokenCategory.COMMA),
+                make_token_with_lexeme(TokenCategory.TRUE, "true"),
+            ],
+            [UnsignedintTC(1), BoolTC(True)],
+        ),
+        # ^ test function call with two argument
+    ],
+)
+def test_parsing_function_call(argument_token_list, resulted_argument_ast):
+    tokens = make_tokens_inside_main(
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "y"),
+        make_arbitrary_token(TokenCategory.LEFT_PAREN),
+        *argument_token_list,
+        make_arbitrary_token(TokenCategory.RIGHT_PAREN),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+    )
+
+    parser = Parser(tokens)
+    ast = parser.parse()
+    expected_ast = make_ast_inside_main(FunctionCallTC("y", resulted_argument_ast))
     assert ast == expected_ast
 
 

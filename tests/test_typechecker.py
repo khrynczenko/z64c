@@ -12,12 +12,12 @@ from tests.ast import (
     ReturnTC,
     AdditionTC,
     NegationTC,
+    FunctionCallTC,
     UnsignedintTC,
     IdentifierTC,
     BoolTC,
 )
 from zx64c.types import (
-    Type,
     U8,
     Bool,
     Void,
@@ -36,6 +36,9 @@ from zx64c.typechecker.errors import (
     NoReturnError,
     UndefinedTypeError,
     UndefinedVariableError,
+    NotFunctionCall,
+    NotEnoughArguments,
+    TooManyArguments,
 )
 
 
@@ -449,3 +452,53 @@ def test_inner_code_blocks_dont_leak_variables():
         return
 
     assert False, "Expected type error exception not raised"
+
+
+def test_function_call_node():
+    environment = EnvironmentStack()
+    environment.push_scope(Scope())
+    environment.add_variable("f", Callable(Void(), [U8(), Bool()]), TEST_CONTEXT)
+    ast = FunctionCallTC("f", [UnsignedintTC(1), BoolTC(True)])
+
+    typecheck_result = ast.visit(TypecheckerVisitor(environment))
+
+    assert typecheck_result == Void()
+
+
+def test_function_call_node_raises_when_not_a_function():
+    environment = EnvironmentStack()
+    environment.push_scope(Scope())
+    environment.add_variable("f", U8(), TEST_CONTEXT)
+    ast = FunctionCallTC("f", [UnsignedintTC(1), BoolTC(True)])
+
+    try:
+        ast.visit(TypecheckerVisitor(environment))
+    except NotFunctionCall as e:
+        assert e == NotFunctionCall("f", TEST_CONTEXT)
+        return
+
+
+def test_function_call_node_raises_when_too_many_arguments():
+    environment = EnvironmentStack()
+    environment.push_scope(Scope())
+    environment.add_variable("f", Callable(Void(), [U8()]), TEST_CONTEXT)
+    ast = FunctionCallTC("f", [UnsignedintTC(1), BoolTC(True)])
+
+    try:
+        ast.visit(TypecheckerVisitor(environment))
+    except TooManyArguments as e:
+        assert e == TooManyArguments("f", 2, 1, TEST_CONTEXT)
+        return
+
+
+def test_function_call_node_raises_when_not_enough_arguments():
+    environment = EnvironmentStack()
+    environment.push_scope(Scope())
+    environment.add_variable("f", Callable(Void(), [U8(), Bool()]), TEST_CONTEXT)
+    ast = FunctionCallTC("f", [UnsignedintTC(1)])
+
+    try:
+        ast.visit(TypecheckerVisitor(environment))
+    except NotEnoughArguments as e:
+        assert e == NotEnoughArguments("f", 1, 2, TEST_CONTEXT)
+        return
