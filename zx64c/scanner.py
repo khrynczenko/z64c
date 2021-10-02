@@ -23,19 +23,26 @@ class TokenCategory(enum.Enum):
     DEDENT = enum.auto()
 
     # KEYWORDS
+    DEF = enum.auto()
+    RETURN = enum.auto()
     PRINT = enum.auto()
     TRUE = enum.auto()
     FALSE = enum.auto()
+    VOID = enum.auto()
     BOOL = enum.auto()
     U8 = enum.auto()
     LET = enum.auto()
     IF = enum.auto()
 
     COLON = enum.auto()
+    COMMA = enum.auto()
+    ARROW = enum.auto()
 
     # PARENTHESES
     LEFT_PAREN = enum.auto()
     RIGHT_PAREN = enum.auto()
+    LEFT_BRACKET = enum.auto()
+    RIGHT_BRACKET = enum.auto()
 
     # BINARY OP
     PLUS = enum.auto()
@@ -53,16 +60,23 @@ class TokenCategory(enum.Enum):
             TokenCategory.NEWLINE: "\\n",
             TokenCategory.INDENT: "INDENT",
             TokenCategory.DEDENT: "DEDENT",
+            TokenCategory.DEF: "def",
+            TokenCategory.RETURN: "return",
             TokenCategory.PRINT: "print",
             TokenCategory.TRUE: "true",
             TokenCategory.FALSE: "false",
+            TokenCategory.VOID: "void",
             TokenCategory.BOOL: "bool",
             TokenCategory.U8: "u8",
             TokenCategory.LET: "let",
             TokenCategory.IF: "if",
             TokenCategory.COLON: ":",
+            TokenCategory.COMMA: ",",
+            TokenCategory.ARROW: "->",
             TokenCategory.LEFT_PAREN: "(",
             TokenCategory.RIGHT_PAREN: ")",
+            TokenCategory.LEFT_BRACKET: "(",
+            TokenCategory.RIGHT_BRACKET: ")",
             TokenCategory.PLUS: "+",
             TokenCategory.MINUS: "-",
             TokenCategory.EQUAL: "==",
@@ -74,9 +88,12 @@ class TokenCategory(enum.Enum):
 
 
 KEYWORD_CATEGORIES = {
+    "def": TokenCategory.DEF,
+    "return": TokenCategory.RETURN,
     "print": TokenCategory.PRINT,
     "true": TokenCategory.TRUE,
     "false": TokenCategory.FALSE,
+    "void": TokenCategory.VOID,
     "bool": TokenCategory.BOOL,
     "u8": TokenCategory.U8,
     "let": TokenCategory.LET,
@@ -179,9 +196,24 @@ class Scanner:
                     self._consume_one_character_symbol(")", TokenCategory.RIGHT_PAREN)
                 )
 
+            elif remaining_source.startswith("["):
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol("[", TokenCategory.LEFT_BRACKET)
+                )
+
+            elif remaining_source.startswith("]"):
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol("]", TokenCategory.RIGHT_BRACKET)
+                )
+
             elif remaining_source.startswith("+"):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol("+", TokenCategory.PLUS)
+                )
+
+            elif remaining_source.startswith("->"):
+                self._produced_tokens.append(
+                    self._consume_two_character_symbol("->", TokenCategory.ARROW)
                 )
 
             elif remaining_source.startswith("-"):
@@ -202,6 +234,11 @@ class Scanner:
             elif remaining_source.startswith(":"):
                 self._produced_tokens.append(
                     self._consume_one_character_symbol(":", TokenCategory.COLON)
+                )
+
+            elif remaining_source.startswith(","):
+                self._produced_tokens.append(
+                    self._consume_one_character_symbol(",", TokenCategory.COMMA)
                 )
 
             elif remaining_source[0].isdigit():
@@ -258,7 +295,11 @@ class Scanner:
     def _is_keyword_next(self):
         return any(
             map(
-                lambda keyword: self._remaining_source.startswith(keyword),
+                lambda keyword: (
+                    self._remaining_source.startswith(keyword)
+                    and not self._remaining_source[len(keyword)].isalnum()
+                    and self._remaining_source[len(keyword)] != "_"
+                ),
                 KEYWORD_CATEGORIES,
             )
         )

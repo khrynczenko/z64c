@@ -5,17 +5,24 @@ recursive descent parsing.
 
 Below is the language grammar.
 
-<program> -> <statement>* EOF
+<program> -> <program_statement>* EOF
+<program_statement> -> <function>
+<function> ->
+    DEF IDENTIFIER LEFT_PAREN <params> RIGHT_PAREN ARROW <type> COLON NEWLINE <block>
+<parameteres> -> (<parameter>)? ( COMMA <parameter>)*
+<parameter> -> IDENTIFIER COLON <type>
 <statement> -> <simple_statement> NEWLINE
 <statement> -> <compound_statement>
 <simple_statement> -> <print>
 <simple_statement> -> <assignment>
 <simple_statement> -> <let>
+<simple_statement> -> <return>
 <compound_statement> -> <if>
 <if> -> IF <expression> COLON NEWLINE <block>
 <block> INDENT <statement>* DEDENT
 <print> -> PRINT LEFT_PAREN <expression> RIGHT_PAREN
 <let> -> LET IDENTIFIER COLON <type> ASSIGN <expression>
+<return> -> RETURN <expression>
 <assignment> -> IDENTIFIER ASSIGN <expression>
 <expression> -> <term> (PLUS <term>)*
 <term> -> <factor> (STAR <factor>)*
@@ -23,10 +30,16 @@ Below is the language grammar.
 <factor> -> MINUS <factor>
 <factor> -> LEFT_PAREN <expr> RIGHT_PAREN
 <factor> -> <atom>
+<atom> -> <function_call>
 <atom> -> UNSIGNEDINT
 <atom> -> IDENTIFIER
 <atom> -> TRUE | FALSE
-<type> -> U8 | BOOL | IDENTIFIER
+<type> -> U8 | BOOL | <function_type> | IDENTIFIER
+<function_call> -> IDENTIFIER LEFT_PAREN <args> RIGHT_PAREN
+<args> -> (<expression>)? ( COMMA <expression>)*
+<function_type> ->
+    IDENTIFIER LEFT_BRACKET LEFT_BRACKET
+    <param_types> RIGHT_BRACKET COMMA <type> RIGHT_BRACKET
 """
 from __future__ import annotations
 
@@ -35,18 +48,22 @@ from abc import ABC
 from typing import List
 
 from zx64c.scanner import Token, TokenCategory
-from zx64c.types import Type
+from zx64c import types
+from zx64c.ast import Parameter
 from zx64c.ast import (
     SourceContext,
     Ast,
     Program,
+    Function,
     Block,
     If,
     Print,
     Let,
+    Return,
     Assignment,
     Addition,
     Negation,
+    FunctionCall,
     Unsignedint,
     Identifier,
     Bool,
@@ -120,11 +137,44 @@ class Parser:
         return SourceContext(self._current_token.line, self._current_token.column)
 
     def _parse_program(self) -> Ast:
-        statements = []
+        functions = []
         context = self._make_context()
         while self._current_token.category is not TokenCategory.EOF:
-            statements.append(self._parse_statement())
-        return Program(statements, context)
+            functions.append(self._parse_function())
+        return Program(functions, context)
+
+    def _parse_function(self) -> Parameter:
+        context = self._make_context()
+        self._consume(TokenCategory.DEF)
+        identifier = self._consume(TokenCategory.IDENTIFIER)
+        self._consume(TokenCategory.LEFT_PAREN)
+        parameters = self._parse_parameters()
+        self._consume(TokenCategory.RIGHT_PAREN)
+        self._consume(TokenCategory.ARROW)
+        return_type_id = self._parse_type()
+        self._consume(TokenCategory.COLON)
+        self._consume(TokenCategory.NEWLINE)
+        block = self._parse_block()
+        return Function(identifier.lexeme, parameters, return_type_id, block, context)
+
+    def _parse_parameters(self) -> [Parameter]:
+        if self._current_token.category is TokenCategory.RIGHT_PAREN:
+            return []
+
+        parameters = []
+        parameters.append(self._parse_parameter())
+
+        while self._current_token.category is TokenCategory.COMMA:
+            self._advance()
+            parameters.append(self._parse_parameter())
+
+        return parameters
+
+    def _parse_parameter(self) -> Parameter:
+        identifier = self._consume(TokenCategory.IDENTIFIER)
+        self._consume(TokenCategory.COLON)
+        type_id = self._parse_type()
+        return Parameter(identifier.lexeme, type_id)
 
     def _parse_statement(self) -> Ast:
         if self._current_token.category in [TokenCategory.IF]:
@@ -146,6 +196,10 @@ class Parser:
             assignment_statement = self._parse_assignment()
             self._consume(TokenCategory.NEWLINE)
             return assignment_statement
+        elif categories[0] is TokenCategory.RETURN:
+            return_statement = self._parse_return()
+            self._consume(TokenCategory.NEWLINE)
+            return return_statement
         else:
             expression = self._parse_expression()
             self._consume(TokenCategory.NEWLINE)
@@ -198,6 +252,12 @@ class Parser:
         expression = self._parse_expression()
         return Assignment(name_token.lexeme, expression, context)
 
+    def _parse_return(self) -> Ast:
+        context = self._make_context()
+        self._consume(TokenCategory.RETURN)
+        expression = self._parse_expression()
+        return Return(expression, context)
+
     def _parse_expression(self) -> Ast:
         lhs = self._parse_term()
         if self._current_token.category is TokenCategory.PLUS:
@@ -229,7 +289,13 @@ class Parser:
 
     def _parse_atom(self) -> Ast:
         context = self._make_context()
-        if self._current_token.category is TokenCategory.UNSIGNEDINT:
+        next_token_categories = [tok.category for tok in self._tokens[:2]]
+        if next_token_categories == [
+            TokenCategory.IDENTIFIER,
+            TokenCategory.LEFT_PAREN,
+        ]:
+            return self._parse_function_call()
+        elif self._current_token.category is TokenCategory.UNSIGNEDINT:
             value = int(self._current_token.lexeme)
             self._advance()
             return Unsignedint(value, context)
@@ -253,21 +319,72 @@ class Parser:
                 context,
             )
 
-    def _parse_type(self) -> Type:
+    def _parse_function_call(self) -> Ast:
         context = self._make_context()
-        possible_type_tokens = [
+        function_name = self._consume(TokenCategory.IDENTIFIER).lexeme
+        self._consume(TokenCategory.LEFT_PAREN)
+        arguments = []
+        if self._current_token.category is not TokenCategory.RIGHT_PAREN:
+            arguments.append(self._parse_expression())
+
+        while self._current_token.category is not TokenCategory.RIGHT_PAREN:
+            self._consume(TokenCategory.COMMA)
+            arguments.append(self._parse_expression())
+
+        self._consume(TokenCategory.RIGHT_PAREN)
+
+        return FunctionCall(function_name, arguments, context)
+
+    def _parse_type(self) -> types.Type:
+        context = self._make_context()
+        built_in_types = [
+            TokenCategory.VOID,
             TokenCategory.BOOL,
             TokenCategory.U8,
+        ]
+        possible_type_tokens = [
             TokenCategory.IDENTIFIER,
         ]
 
-        if self._current_token.category in possible_type_tokens:
+        if self._current_token.category in built_in_types:
+            to_type = {"bool": types.Bool(), "u8": types.U8(), "void": types.Void()}
             value = self._current_token.lexeme
             self._advance()
-            return Type(value)
+            return to_type[value]
+        elif (
+            len(self._tokens) > 1
+            and self._tokens[0].category is TokenCategory.IDENTIFIER
+            and self._tokens[1].category is TokenCategory.LEFT_BRACKET
+        ):
+            return self._parse_function_type(self)
+        elif self._current_token.category is TokenCategory.IDENTIFIER:
+            name = self._consume(TokenCategory.IDENTIFIER)
+            return types.TypeIdentifier(name)
         else:
             raise UnexpectedTokenError(
                 possible_type_tokens,
                 self._current_token.category,
                 context,
             )
+
+    def _parse_function_type(self) -> types.Type:
+        self._consume(TokenCategory.LEFT_BRACKET)
+        self._consume(TokenCategory.LEFT_BRACKET)
+        param_types = self._parse_param_types(self)
+        self._consume(TokenCategory.RIGHT_BRACKET)
+        return_type = self._parse_type()
+        self._consume(TokenCategory.RIGHT_PAREN)
+        return types.Callable(return_type, param_types)
+
+    def _parse_param_types(self) -> [types.Type]:
+        if self._current_token.category is TokenCategory.RIGHT_BRACKET:
+            return []
+
+        parameter_types = []
+        parameter_types.append(self._parse_type())
+
+        while self._current_token.category is TokenCategory.COMMA:
+            self._advance()
+            parameter_types.append(self._parse_type())
+
+        return parameter_types

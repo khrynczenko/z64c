@@ -4,43 +4,67 @@ import abc
 
 from typing import List, Text, TypeVar, Generic
 from abc import ABC
+from dataclasses import dataclass
 
-from zx64c.types import Type
+from zx64c.types import Type, Callable
 
 T = TypeVar("T")
 
 
 class AstVisitor(ABC, Generic[T]):
+    @abc.abstractmethod
     def visit_program(self, node: Program) -> T:
         pass
 
+    @abc.abstractmethod
+    def visit_function(self, node: Function) -> T:
+        pass
+
+    @abc.abstractmethod
     def visit_block(self, node: Block) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_if(self, node: Block) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_print(self, node: Print) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_let(self, node: Assignment) -> T:
         pass
 
+    @abc.abstractmethod
+    def visit_return(self, node: Return) -> T:
+        pass
+
+    @abc.abstractmethod
     def visit_assignment(self, node: Assignment) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_addition(self, node: Addition) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_negation(self, node: Negation) -> T:
         pass
 
+    @abc.abstractmethod
+    def visit_function_call(self, node: FunctionCall) -> T:
+        pass
+
+    @abc.abstractmethod
     def visit_identifier(self, node: Identifier) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_unsignedint(self, node: Unsignedint) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_bool(self, node: Bool) -> T:
         pass
 
@@ -93,15 +117,49 @@ class SjasmplusSnapshotProgram(Ast):
 
 
 class Program(Ast):
-    def __init__(self, statements: List[Ast], context: SourceContext):
+    def __init__(self, functions: List[Function], context: SourceContext):
         super().__init__(context)
-        self.statements = statements
+        self.functions = functions
 
     def __eq__(self, rhs: Program) -> bool:
-        return self.statements == rhs.statements and self.context == rhs.context
+        return self.functions == rhs.functions and self.context == rhs.context
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_program(self)
+
+
+@dataclass
+class Parameter:
+    name: str
+    type_id: Type
+
+
+class Function(Ast):
+    def __init__(
+        self,
+        name: str,
+        parameters: List[Parameter],
+        return_type: Type,
+        code_block: Block,
+        context: SourceContext,
+    ):
+        super().__init__(context)
+        self.name = name
+        self.parameters = parameters
+        self.return_type = return_type
+        self.code_block = code_block
+        self.type = Callable(return_type, [p.type_id for p in parameters])
+
+    def __eq__(self, rhs: Function) -> bool:
+        return (
+            self.name == rhs.name
+            and self.parameters == rhs.parameters
+            and self.return_type == rhs.return_type
+            and self.code_block == rhs.code_block
+        )
+
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visit_function(self)
 
 
 class Block(Ast):
@@ -177,6 +235,18 @@ class Assignment(Ast):
         return v.visit_assignment(self)
 
 
+class Return(Ast):
+    def __init__(self, expr: Ast, context: SourceContext):
+        super().__init__(context)
+        self.expr = expr
+
+    def __eq__(self, rhs: Return) -> bool:
+        return self.expr == rhs.expr
+
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visit_return(self)
+
+
 class Addition(Ast):
     def __init__(self, lhs: Ast, rhs: Ast, context: SourceContext):
         super().__init__(context)
@@ -202,6 +272,25 @@ class Negation(Ast):
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_negation(self)
+
+
+class FunctionCall(Ast):
+    def __init__(
+        self, function_name: str, arguments: List[Ast], context: SourceContext
+    ):
+        super().__init__(context)
+        self.function_name = function_name
+        self.arguments = arguments
+
+    def __eq__(self, rhs: Identifier) -> bool:
+        return (
+            self.function_name == rhs.function_name
+            and self.arguments == rhs.arguments
+            and self.context == rhs.context
+        )
+
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visit_function_call(self)
 
 
 class Identifier(Ast):
