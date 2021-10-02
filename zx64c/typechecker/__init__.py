@@ -90,7 +90,6 @@ class EnvironmentStack:
         :param context: used to create error in case the variable is not defined
         """
         for scope in reversed(self._scopes):
-            print(scope._variable_types)
             try:
                 return scope.get_variable_type(name, context)
             except UndefinedVariableError:
@@ -129,6 +128,7 @@ class TypecheckerVisitor(AstVisitor[Type]):
     def __init__(self, environment: EnvironmentStack = None):
         if environment is None:
             environment = EnvironmentStack()
+            environment.push_scope(Scope())
         self._environment = environment
         self._current_function_return_type: Type = VOID
         self._return_has_occured = False
@@ -149,6 +149,8 @@ class TypecheckerVisitor(AstVisitor[Type]):
     def visit_function(self, node: Function) -> Type:
         self._current_function_return_type = node.return_type
         self._return_has_occured = False
+
+        self._environment.add_variable(node.name, node.type, node.context)
 
         function_scope = Scope()
         for parameter in node.parameters:

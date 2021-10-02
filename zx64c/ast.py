@@ -12,45 +12,59 @@ T = TypeVar("T")
 
 
 class AstVisitor(ABC, Generic[T]):
+    @abc.abstractmethod
     def visit_program(self, node: Program) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_function(self, node: Function) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_block(self, node: Block) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_if(self, node: Block) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_print(self, node: Print) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_let(self, node: Assignment) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_return(self, node: Return) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_assignment(self, node: Assignment) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_addition(self, node: Addition) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_negation(self, node: Negation) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_function_call(self, node: FunctionCall) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_identifier(self, node: Identifier) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_unsignedint(self, node: Unsignedint) -> T:
         pass
 
+    @abc.abstractmethod
     def visit_bool(self, node: Bool) -> T:
         pass
 

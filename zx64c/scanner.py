@@ -295,7 +295,11 @@ class Scanner:
     def _is_keyword_next(self):
         return any(
             map(
-                lambda keyword: self._remaining_source.startswith(keyword),
+                lambda keyword: (
+                    self._remaining_source.startswith(keyword)
+                    and not self._remaining_source[len(keyword)].isalnum()
+                    and self._remaining_source[len(keyword)] != "_"
+                ),
                 KEYWORD_CATEGORIES,
             )
         )
