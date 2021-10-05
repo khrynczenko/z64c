@@ -18,6 +18,7 @@ from tests.ast import (
     BoolTC,
 )
 from zx64c.types import (
+    I8,
     U8,
     Bool,
     Void,
@@ -33,6 +34,7 @@ from zx64c.typechecker.errors import (
     AlreadyDefinedVariableError,
     CombinedTypecheckError,
     TypeMismatchError,
+    ExpectedNumericalTypeError,
     NoReturnError,
     UndefinedTypeError,
     UndefinedVariableError,
@@ -66,11 +68,23 @@ def test_addition_node_type():
     assert typecheck_result == U8()
 
 
+def test_addition_raises_on_not_numerical_types():
+    ast = AdditionTC(BoolTC(True), UnsignedintTC(2))
+
+    try:
+        ast.visit(TypecheckerVisitor())
+    except ExpectedNumericalTypeError as e:
+        assert e == ExpectedNumericalTypeError(Bool(), TEST_CONTEXT)
+        return
+
+    assert False, "Expected type mismatch exception not raised"
+
+
 @pytest.mark.parametrize(
     "lhs_node, rhs_node, expected_type, got_type",
     [
-        (BoolTC(True), UnsignedintTC(1), U8(), Bool()),
-        (UnsignedintTC(1), BoolTC(True), U8(), Bool()),
+        (UnsignedintTC(1), NegationTC(UnsignedintTC(1)), U8(), I8()),
+        (NegationTC(UnsignedintTC(1)), UnsignedintTC(1), I8(), U8()),
     ],
 )
 def test_addition_node_type_mismatch(lhs_node, rhs_node, expected_type, got_type):
@@ -118,6 +132,14 @@ def test_addition_node_type_mismatch_with_variable():
     assert False, "Expected type error exception not raised"
 
 
+def test_negation_node_returns_signed_type():
+    ast = NegationTC(UnsignedintTC(2))
+
+    typecheck_result = ast.visit(TypecheckerVisitor())
+
+    assert typecheck_result == I8()
+
+
 def test_identifier_node_type():
     ast = IdentifierTC("x")
     scope = Scope()
@@ -148,16 +170,16 @@ def test_negation_node():
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result == U8()
+    assert typecheck_result == I8()
 
 
-def test_negation_node_type_mismatch():
+def test_negation_node_raises_on_non_numerical_type():
     ast = NegationTC(BoolTC(True))
 
     try:
         ast.visit(TypecheckerVisitor())
-    except TypeMismatchError as e:
-        assert e == TypeMismatchError(U8(), Bool(), TEST_CONTEXT)
+    except ExpectedNumericalTypeError as e:
+        assert e == ExpectedNumericalTypeError(Bool(), TEST_CONTEXT)
         return
 
     assert False, "Expected type error exception not raised"

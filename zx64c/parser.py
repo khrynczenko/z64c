@@ -340,6 +340,7 @@ class Parser:
         built_in_types = [
             TokenCategory.VOID,
             TokenCategory.BOOL,
+            TokenCategory.I8,
             TokenCategory.U8,
         ]
         possible_type_tokens = [
@@ -347,7 +348,12 @@ class Parser:
         ]
 
         if self._current_token.category in built_in_types:
-            to_type = {"bool": types.Bool(), "u8": types.U8(), "void": types.Void()}
+            to_type = {
+                "bool": types.Bool(),
+                "i8": types.I8(),
+                "u8": types.U8(),
+                "void": types.Void(),
+            }
             value = self._current_token.lexeme
             self._advance()
             return to_type[value]

@@ -167,7 +167,7 @@ class Block(Ast):
         super().__init__(context)
         self.statements = statements
 
-    def __eq__(self, rhs: If) -> bool:
+    def __eq__(self, rhs: Block) -> bool:
         return self.statements == rhs.statements
 
     def visit(self, v: AstVisitor[T]) -> T:

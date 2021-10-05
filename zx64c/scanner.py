@@ -30,6 +30,7 @@ class TokenCategory(enum.Enum):
     FALSE = enum.auto()
     VOID = enum.auto()
     BOOL = enum.auto()
+    I8 = enum.auto()
     U8 = enum.auto()
     LET = enum.auto()
     IF = enum.auto()
@@ -67,6 +68,7 @@ class TokenCategory(enum.Enum):
             TokenCategory.FALSE: "false",
             TokenCategory.VOID: "void",
             TokenCategory.BOOL: "bool",
+            TokenCategory.I8: "i8",
             TokenCategory.U8: "u8",
             TokenCategory.LET: "let",
             TokenCategory.IF: "if",
@@ -95,6 +97,7 @@ KEYWORD_CATEGORIES = {
     "false": TokenCategory.FALSE,
     "void": TokenCategory.VOID,
     "bool": TokenCategory.BOOL,
+    "i8": TokenCategory.U8,
     "u8": TokenCategory.U8,
     "let": TokenCategory.LET,
     "if": TokenCategory.IF,

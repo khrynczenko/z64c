@@ -1,9 +1,8 @@
-def add(x: u8, y: u8) -> u8:
-    return x + y
-
-def add_with_two(x: u8, y: u8) -> u8:
-    let z: u8 = 2
-    return add(x, y) + z
+def subtract(x: i8, y: i8) -> i8:
+    return x + -y
 
 def main() -> void:
-    print(add_with_two(61, 2))
+    let ascii_C: i8 = 67
+    let one: i8 = 1
+    let ascii_B: i8 = subtract(ascii_C, one)
+    print(ascii_B)

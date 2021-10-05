@@ -18,13 +18,14 @@ from zx64c.ast import (
     Bool,
 )
 from zx64c.ast import AstVisitor
-from zx64c.types import Type, Callable, Void, U8, TypeIdentifier
+from zx64c.types import Type, Callable, Void, I8, U8, TypeIdentifier
 from zx64c.types import Bool as BoolT
 from zx64c.typechecker.errors import (
     TypecheckError,
     AlreadyDefinedVariableError,
     CombinedTypecheckError,
     TypeMismatchError,
+    ExpectedNumericalTypeError,
     NoReturnError,
     UndefinedTypeError,
     UndefinedVariableError,
@@ -34,6 +35,7 @@ from zx64c.typechecker.errors import (
 )
 
 VOID = Void()
+I8 = I8()
 U8 = U8()
 BOOL = BoolT()
 
@@ -202,6 +204,9 @@ class TypecheckerVisitor(AstVisitor[Type]):
         self._environment.add_variable(node.name, node.var_type, node.context)
 
         variable_type = self._environment.get_variable_type(node.name, node.context)
+        if variable_type.is_numerical() and rhs_type.is_numerical():
+            return VOID
+
         if variable_type != rhs_type:
             raise TypeMismatchError(variable_type, rhs_type, node.context)
 
@@ -231,19 +236,25 @@ class TypecheckerVisitor(AstVisitor[Type]):
         lhs_type = node.lhs.visit(self)
         rhs_type = node.rhs.visit(self)
 
-        if lhs_type != U8:
-            raise TypeMismatchError(U8, lhs_type, node.lhs.context)
+        if not lhs_type.is_numerical():
+            raise ExpectedNumericalTypeError(lhs_type, node.lhs.context)
 
-        if rhs_type != U8:
-            raise TypeMismatchError(U8, rhs_type, node.rhs.context)
+        if not rhs_type.is_numerical():
+            raise ExpectedNumericalTypeError(rhs_type, node.rhs.context)
 
-        return U8
+        if lhs_type != rhs_type:
+            raise TypeMismatchError(lhs_type, rhs_type, node.lhs.context)
+
+        return lhs_type
 
     def visit_negation(self, node: Negation) -> Type:
         expression_type = node.expression.visit(self)
 
-        if expression_type != U8:
-            raise TypeMismatchError(U8, expression_type, node.context)
+        if not expression_type.is_numerical():
+            raise ExpectedNumericalTypeError(expression_type, node.context)
+
+        if expression_type == U8:
+            return I8
 
         return expression_type
 

@@ -13,6 +13,10 @@ class Type(ABC):
     def __str__(self):
         pass
 
+    @staticmethod
+    def is_numerical() -> bool:
+        return False
+
 
 class TypeIdentifier(Type):
     def __init__(self, name: str):
@@ -33,12 +37,37 @@ class Void(Type):
         return "void"
 
 
-class U8(Type):
+class Numerical(Type, ABC):
+    @staticmethod
+    @abc.abstractmethod
+    def is_signed() -> bool:
+        pass
+
+    @staticmethod
+    def is_numerical() -> bool:
+        return True
+
+
+class U8(Numerical):
+    def is_signed() -> bool:
+        return False
+
     def __eq__(self, rhs: Type):
         return isinstance(rhs, U8)
 
     def __str__(self):
         return "u8"
+
+
+class I8(Numerical):
+    def is_signed() -> bool:
+        return True
+
+    def __eq__(self, rhs: Type):
+        return isinstance(rhs, I8)
+
+    def __str__(self):
+        return "i8"
 
 
 class Bool(Type):

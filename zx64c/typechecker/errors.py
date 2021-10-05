@@ -52,6 +52,15 @@ class TypeMismatchError(TypecheckError):
         )
 
 
+class ExpectedNumericalTypeError(TypecheckError):
+    def __init__(self, received_type: Type, context: SourceContext):
+        super().__init__(context)
+        self._received_type = received_type
+
+    def _make_error_message(self) -> str:
+        return f"Expected numerical type. Received type {self._received_type}."
+
+
 class NoReturnError(TypecheckError):
     def __init__(self, expected_type: Type, function_name: str, context: SourceContext):
         super().__init__(context)

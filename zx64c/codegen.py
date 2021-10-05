@@ -222,7 +222,7 @@ class Z80CodegenVisitor(AstVisitor[None]):
         node.lhs.visit(self)
         print(f"{INDENTATION}ld b, a")
         node.rhs.visit(self)
-        print(f"{INDENTATION}adc a, b")
+        print(f"{INDENTATION}add a, b")
 
     def visit_negation(self, node: Negation) -> None:
         node.expression.visit(self)
