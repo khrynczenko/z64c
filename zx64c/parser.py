@@ -366,7 +366,7 @@ class Parser:
         ):
             return self._parse_function_type(self)
         elif self._current_token.category is TokenCategory.IDENTIFIER:
-            name = self._consume(TokenCategory.IDENTIFIER)
+            name = self._consume(TokenCategory.IDENTIFIER).lexeme
             return types.TypeIdentifier(name)
         else:
             raise UnexpectedTokenError(

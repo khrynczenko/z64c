@@ -22,7 +22,7 @@ from tests.ast import (
 from zx64c.ast import Parameter
 from zx64c.scanner import Token, TokenCategory
 from zx64c.parser import Parser, UnexpectedTokenError
-from zx64c.types import Void, U8, Bool
+from zx64c.types import Void, U8, Bool, TypeIdentifier
 
 
 def build_test_tokens_from_categories(categories: List[TokenCategory]):
@@ -183,6 +183,25 @@ def test_parsing_let_unsigned_int():
     parser = Parser(tokens)
     ast = parser.parse()
     expected_ast = make_ast_inside_main(LetTC("x", U8(), UnsignedintTC(10)))
+    assert ast == expected_ast
+
+
+def test_parsing_let_with_user_defined_type():
+    tokens = make_tokens_inside_main(
+        make_arbitrary_token(TokenCategory.LET),
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "x"),
+        make_arbitrary_token(TokenCategory.COLON),
+        make_token_with_lexeme(TokenCategory.IDENTIFIER, "UserDefinedType"),
+        make_arbitrary_token(TokenCategory.ASSIGN),
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "10"),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+    )
+
+    parser = Parser(tokens)
+    ast = parser.parse()
+    expected_ast = make_ast_inside_main(
+        LetTC("x", TypeIdentifier("UserDefinedType"), UnsignedintTC(10))
+    )
     assert ast == expected_ast
 
 
