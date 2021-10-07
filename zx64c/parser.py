@@ -5,7 +5,7 @@ recursive descent parsing.
 
 Below is the language grammar.
 
-<program> -> <program_statement>* EOF
+<program> -> NEWLINE? <program_statement>* EOF
 <program_statement> -> <function>
 <function> ->
     DEF IDENTIFIER LEFT_PAREN <params> RIGHT_PAREN ARROW <type> COLON NEWLINE <block>
@@ -139,6 +139,8 @@ class Parser:
     def _parse_program(self) -> Ast:
         functions = []
         context = self._make_context()
+        if self._current_token.category is TokenCategory.NEWLINE:
+            self._advance()
         while self._current_token.category is not TokenCategory.EOF:
             functions.append(self._parse_function())
         return Program(functions, context)
