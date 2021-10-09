@@ -1,8 +1,13 @@
-def subtract(x: i8, y: i8) -> i8:
-    return x + -y
+def print3(x: i8, y: i8, z: i8) -> void:
+    print(x)
+    print(y)
+    print(z)
 
 def main() -> void:
+    let ascii_A: i8 = 65
+    let ascii_B: i8 = 66
     let ascii_C: i8 = 67
-    let one: i8 = 1
-    let ascii_B: i8 = subtract(ascii_C, one)
+    print(ascii_A)
     print(ascii_B)
+    print(ascii_C)
+    print3(ascii_A, ascii_B, ascii_C)

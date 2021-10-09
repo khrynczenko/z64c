@@ -30,10 +30,12 @@ def make_label() -> str:
 class Environment:
     def __init__(self):
         self._variable_offsets = {}
-        # ^^^ these offsets are with respect to the stack pointer
+        # ^^^ these offsets are with respect to the frame pointer
+        #     going towards zero
 
         self._parameters_offsets = {}
         # ^^^ these offsets are with respect to the frame pointer
+        #     going towards infinity
 
     def add_parameter(self, name: str):
         self._parameters_offsets[name] = 2
@@ -42,10 +44,8 @@ class Environment:
         }
 
     def add_variable(self, name: str):
-        self._variable_offsets[name] = -2
-        self._variable_offsets = {
-            key: offset + 2 for key, offset in self._variable_offsets.items()
-        }
+        min_offset = min(list(self._variable_offsets.values()) + [0]) - 2
+        self._variable_offsets[name] = min_offset
 
     def is_parameter(self, name: str) -> bool:
         if name in self._variable_offsets:
@@ -131,9 +131,9 @@ class Z80CodegenVisitor(AstVisitor[None]):
         -------
         | $?? | = address where to return (push pc result of the caller)
         -------
-        | $?? | = argument for the first parameter
+        | $?? | = argument for the second parameter
         -------
-        | $?? | = argument for the second parameter ...
+        | $?? | = argument for the first parameter ...
         -------
 
         """
@@ -172,9 +172,7 @@ class Z80CodegenVisitor(AstVisitor[None]):
         print("")
         for function in node.functions:
             environment = Environment()
-            for parameter in reversed(function.parameters):
-                # ^ we add them in reverse so it is easier to reach them on the
-                #   stack
+            for parameter in function.parameters:
                 environment.add_parameter(parameter.name)
             visitor = Z80CodegenVisitor(environment)
             function.visit(visitor)
@@ -234,19 +232,13 @@ class Z80CodegenVisitor(AstVisitor[None]):
             print(f"{INDENTATION}push af")
         print(f"{INDENTATION}call {node.function_name}")
         for arg_expression in node.arguments:
-            # we need to deallocate that we pushed on the stack as arguments
-            # to the callee as it is no longer needed
+            # after the call we need to deallocate that all the arguments
+            # that we previously pushed onto the stack
             print(f"{INDENTATION}pop bc")
 
     def visit_identifier(self, node: Identifier) -> None:
         offset = self._environment.get_variable_offset(node.value)
-        if self._environment.is_parameter(node.value):
-            # we offset from frame pointer
-            print(f"{INDENTATION}ld hl, (frame_pointer)")
-        else:
-            # we offset from stack pointer
-            print(f"{INDENTATION}ld hl, $00")
-            print(f"{INDENTATION}add hl, sp")
+        print(f"{INDENTATION}ld hl, (frame_pointer)")
         print(f"{INDENTATION}ld ix, hl")
         print(f"{INDENTATION}ld a, (ix + {offset + 1})")
 
