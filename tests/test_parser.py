@@ -11,6 +11,8 @@ from tests.ast import (
     LetTC,
     AssignmentTC,
     ReturnTC,
+    EqualTC,
+    NotEqualTC,
     AdditionTC,
     NegationTC,
     FunctionCallTC,
@@ -275,6 +277,56 @@ def test_parsing_assignment_identifier():
     parser = Parser(tokens)
     ast = parser.parse()
     expected_ast = make_ast_inside_main(AssignmentTC("x", IdentifierTC("y")))
+    assert ast == expected_ast
+
+
+@pytest.mark.parametrize(
+    "equality_ast, token_category",
+    [
+        (EqualTC, TokenCategory.EQUAL),
+        (NotEqualTC, TokenCategory.NOT_EQUAL),
+    ],
+)
+def test_parsing_equality_operators(equality_ast, token_category):
+    tokens = make_tokens_inside_main(
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "1"),
+        make_arbitrary_token(token_category),
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "2"),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+    )
+
+    parser = Parser(tokens)
+    ast = parser.parse()
+    expected_ast = make_ast_inside_main(
+        equality_ast(UnsignedintTC(1), UnsignedintTC(2))
+    )
+    assert ast == expected_ast
+
+
+@pytest.mark.parametrize(
+    "equality_ast, token_category",
+    [
+        (EqualTC, TokenCategory.EQUAL),
+        (NotEqualTC, TokenCategory.NOT_EQUAL),
+    ],
+)
+def test_parsing_equality_operators_precedence_is_after_addition(
+    equality_ast, token_category
+):
+    tokens = make_tokens_inside_main(
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "1"),
+        make_arbitrary_token(token_category),
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "2"),
+        make_arbitrary_token(TokenCategory.PLUS),
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "3"),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+    )
+
+    parser = Parser(tokens)
+    ast = parser.parse()
+    expected_ast = make_ast_inside_main(
+        equality_ast(UnsignedintTC(1), AdditionTC(UnsignedintTC(2), UnsignedintTC(3)))
+    )
     assert ast == expected_ast
 
 

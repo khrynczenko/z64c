@@ -117,6 +117,17 @@ def test_scanner_produces_equal():
     ]
 
 
+def test_scanner_produces_not_equal():
+    source = "  !=  "
+    scanner = Scanner(source)
+    tokens = scanner.scan()
+
+    assert tokens == [
+        Token(1, 3, TokenCategory.NOT_EQUAL, "!="),
+        Token(1, 7, TokenCategory.EOF, ""),
+    ]
+
+
 def test_scanner_produces_assign():
     source = "  =  "
     scanner = Scanner(source)

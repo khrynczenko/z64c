@@ -9,6 +9,8 @@ from zx64c.ast import (
     Let,
     Return,
     Assignment,
+    Equal,
+    NotEqual,
     Addition,
     Negation,
     Identifier,
@@ -20,10 +22,12 @@ from zx64c.ast import AstVisitor
 
 INDENTATION = "    "
 
-_LABEL = 0
+_LABEL = -1
 
 
 def make_label() -> str:
+    global _LABEL
+    _LABEL += 1
     return f"LB{_LABEL}"
 
 
@@ -90,6 +94,12 @@ class SjasmplusSnapshotVisitor(AstVisitor[None]):
 
     def visit_assignment(self, node: Assignment) -> None:
         self._codegen.visit_assignment(node)
+
+    def visit_equal(self, node: Equal) -> None:
+        self._codegen.visit_equal(node)
+
+    def visit_not_equal(self, node: NotEqual) -> None:
+        self._codegen.visit_not_equal(node)
 
     def visit_addition(self, node: Addition) -> None:
         self._codegen.visit_addition(node)
@@ -215,6 +225,28 @@ class Z80CodegenVisitor(AstVisitor[None]):
         print(f"{INDENTATION}add hl, sp")
         print(f"{INDENTATION}ld ix, hl")
         print(f"{INDENTATION}ld (ix + {offset + 1}), a")
+
+    def visit_equal(self, node: Equal) -> None:
+        node.lhs.visit(self)
+        print(f"{INDENTATION}ld b, a")
+        node.rhs.visit(self)
+        label = make_label()
+        print(f"{INDENTATION}cp b")
+        print(f"{INDENTATION}ld a, $01")  # We assume it is true
+        print(f"{INDENTATION}jp z, {label}")
+        print(f"{INDENTATION}ld a, $00")  # In case operans are not equal
+        print(f"{label}:")
+
+    def visit_not_equal(self, node: NotEqual) -> None:
+        node.lhs.visit(self)
+        print(f"{INDENTATION}ld b, a")
+        node.rhs.visit(self)
+        label = make_label()
+        print(f"{INDENTATION}cp b")
+        print(f"{INDENTATION}ld a, $01")  # We assume it is true
+        print(f"{INDENTATION}jp nz, {label}")
+        print(f"{INDENTATION}ld a, $00")  # In case operands are equal
+        print(f"{label}:")
 
     def visit_addition(self, node: Addition) -> None:
         node.lhs.visit(self)

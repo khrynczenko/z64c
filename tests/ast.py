@@ -15,6 +15,8 @@ from zx64c.ast import (
     Return,
     Print,
     Assignment,
+    Equal,
+    NotEqual,
     Addition,
     Negation,
     FunctionCall,
@@ -35,6 +37,8 @@ LetTC = functools.partial(Let, context=TEST_CONTEXT)
 ReturnTC = functools.partial(Return, context=TEST_CONTEXT)
 PrintTC = functools.partial(Print, context=TEST_CONTEXT)
 AssignmentTC = functools.partial(Assignment, context=TEST_CONTEXT)
+EqualTC = functools.partial(Equal, context=TEST_CONTEXT)
+NotEqualTC = functools.partial(NotEqual, context=TEST_CONTEXT)
 AdditionTC = functools.partial(Addition, context=TEST_CONTEXT)
 NegationTC = functools.partial(Negation, context=TEST_CONTEXT)
 FunctionCallTC = functools.partial(FunctionCall, context=TEST_CONTEXT)

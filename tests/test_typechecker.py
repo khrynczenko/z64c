@@ -10,6 +10,8 @@ from tests.ast import (
     LetTC,
     AssignmentTC,
     ReturnTC,
+    EqualTC,
+    NotEqualTC,
     AdditionTC,
     NegationTC,
     FunctionCallTC,
@@ -58,6 +60,29 @@ def test_bool_node_type():
     typecheck_result = ast.visit(TypecheckerVisitor())
 
     assert typecheck_result == Bool()
+
+
+@pytest.mark.parametrize(
+    "equality_ast, lhs_node, rhs_node, expected_type, got_type",
+    [
+        (EqualTC, UnsignedintTC(1), BoolTC(True), U8(), Bool()),
+        (EqualTC, BoolTC(True), UnsignedintTC(1), Bool(), U8()),
+        (NotEqualTC, UnsignedintTC(1), BoolTC(True), U8(), Bool()),
+        (NotEqualTC, BoolTC(True), UnsignedintTC(1), Bool(), U8()),
+    ],
+)
+def test_equality_operators_raise_on_mismatch(
+    equality_ast, lhs_node, rhs_node, expected_type, got_type
+):
+    ast = equality_ast(lhs_node, rhs_node)
+
+    try:
+        ast.visit(TypecheckerVisitor())
+    except TypeMismatchError as e:
+        assert e == TypeMismatchError(expected_type, got_type, TEST_CONTEXT)
+        return
+
+    assert False, "Expected type mismatch exception not raised"
 
 
 def test_addition_node_type():
@@ -211,6 +236,27 @@ def test_assignment_node_raises_mismatch():
     except CombinedTypecheckError as e:
         assert e == CombinedTypecheckError(
             [TypeMismatchError(U8(), Bool(), TEST_CONTEXT)]
+        )
+        return
+
+    assert False, "Expected type error exception not raised"
+
+
+def test_assignment_node_with_function_call_raises_mismatch():
+    environment = EnvironmentStack()
+    scope = Scope()
+    scope.add_variable("f", Callable(I8(), []), TEST_CONTEXT)
+    environment.push_scope(scope)
+
+    ast = BlockTC(
+        [LetTC("x", U8(), UnsignedintTC(1)), AssignmentTC("x", FunctionCallTC("f", []))]
+    )
+
+    try:
+        ast.visit(TypecheckerVisitor(environment))
+    except CombinedTypecheckError as e:
+        assert e == CombinedTypecheckError(
+            [TypeMismatchError(U8(), I8(), TEST_CONTEXT)]
         )
         return
 

@@ -24,7 +24,9 @@ Below is the language grammar.
 <let> -> LET IDENTIFIER COLON <type> ASSIGN <expression>
 <return> -> RETURN <expression>
 <assignment> -> IDENTIFIER ASSIGN <expression>
-<expression> -> <term> (PLUS <term>)*
+<expression> -> <addition> (EQUAL <addition>)*
+<expression> -> <addition> (NOT_EQUAL <addition>)*
+<addition> -> <term> (PLUS <term>)*
 <term> -> <factor> (STAR <factor>)*
 <factor> -> PLUS <factor>
 <factor> -> MINUS <factor>
@@ -61,6 +63,8 @@ from zx64c.ast import (
     Let,
     Return,
     Assignment,
+    Equal,
+    NotEqual,
     Addition,
     Negation,
     FunctionCall,
@@ -261,15 +265,30 @@ class Parser:
         return Return(expression, context)
 
     def _parse_expression(self) -> Ast:
+        lhs = self._parse_addition()
+        if self._current_token.category is TokenCategory.EQUAL:
+            context = self._make_context()
+            self._advance()
+            rhs = self._parse_expression()
+            return Equal(lhs, rhs, context)
+        if self._current_token.category is TokenCategory.NOT_EQUAL:
+            context = self._make_context()
+            self._advance()
+            rhs = self._parse_expression()
+            return NotEqual(lhs, rhs, context)
+        return lhs
+
+    def _parse_addition(self) -> Ast:
         lhs = self._parse_term()
         if self._current_token.category is TokenCategory.PLUS:
             context = self._make_context()
             self._advance()
-            rhs = self._parse_expression()
+            rhs = self._parse_addition()
             return Addition(lhs, rhs, context)
         return lhs
 
     def _parse_term(self) -> Ast:
+        # Not implemented yet, multiplication should be here
         return self._parse_factor()
 
     def _parse_factor(self) -> Ast:

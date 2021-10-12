@@ -45,6 +45,14 @@ class AstVisitor(ABC, Generic[T]):
         pass
 
     @abc.abstractmethod
+    def visit_equal(self, node: Equal) -> T:
+        pass
+
+    @abc.abstractmethod
+    def visit_not_equal(self, node: NotEqual) -> T:
+        pass
+
+    @abc.abstractmethod
     def visit_addition(self, node: Addition) -> T:
         pass
 
@@ -247,6 +255,42 @@ class Return(Ast):
         return v.visit_return(self)
 
 
+class Equal(Ast):
+    def __init__(self, lhs: Ast, rhs: Ast, context: SourceContext):
+        super().__init__(context)
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def __eq__(self, rhs: Equal) -> bool:
+        return (
+            isinstance(rhs, Equal)
+            and self.lhs == rhs.lhs
+            and self.rhs == rhs.rhs
+            and self.context == rhs.context
+        )
+
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visit_equal(self)
+
+
+class NotEqual(Ast):
+    def __init__(self, lhs: Ast, rhs: Ast, context: SourceContext):
+        super().__init__(context)
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def __eq__(self, rhs: NotEqual) -> bool:
+        return (
+            isinstance(rhs, NotEqual)
+            and self.lhs == rhs.lhs
+            and self.rhs == rhs.rhs
+            and self.context == rhs.context
+        )
+
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visit_not_equal(self)
+
+
 class Addition(Ast):
     def __init__(self, lhs: Ast, rhs: Ast, context: SourceContext):
         super().__init__(context)
@@ -255,7 +299,10 @@ class Addition(Ast):
 
     def __eq__(self, rhs: Addition) -> bool:
         return (
-            self.lhs == rhs.lhs and self.rhs == rhs.rhs and self.context == rhs.context
+            isinstance(rhs, Addition)
+            and self.lhs == rhs.lhs
+            and self.rhs == rhs.rhs
+            and self.context == rhs.context
         )
 
     def visit(self, v: AstVisitor[T]) -> T:
@@ -299,7 +346,11 @@ class Identifier(Ast):
         self.value = value
 
     def __eq__(self, rhs: Identifier) -> bool:
-        return self.value == rhs.value and self.context == self.context
+        return (
+            isinstance(rhs, Identifier)
+            and self.value == rhs.value
+            and self.context == self.context
+        )
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_identifier(self)
@@ -311,7 +362,11 @@ class Unsignedint(Ast):
         self.value = value
 
     def __eq__(self, rhs: Unsignedint) -> bool:
-        return self.value == rhs.value and self.context == self.context
+        return (
+            isinstance(rhs, Unsignedint)
+            and self.value == rhs.value
+            and self.context == self.context
+        )
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_unsignedint(self)
@@ -323,7 +378,11 @@ class Bool(Ast):
         self.value = value
 
     def __eq__(self, rhs: Unsignedint) -> bool:
-        return self.value == rhs.value and self.context == self.context
+        return (
+            isinstance(rhs, Bool)
+            and self.value == rhs.value
+            and self.context == self.context
+        )
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_bool(self)

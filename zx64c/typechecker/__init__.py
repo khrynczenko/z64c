@@ -10,6 +10,8 @@ from zx64c.ast import (
     Let,
     Return,
     Assignment,
+    Equal,
+    NotEqual,
     Addition,
     Negation,
     FunctionCall,
@@ -231,6 +233,18 @@ class TypecheckerVisitor(AstVisitor[Type]):
         self._return_has_occured = True
 
         return VOID
+
+    def visit_equal(self, node: Equal) -> Type:
+        lhs_type = node.lhs.visit(self)
+        rhs_type = node.rhs.visit(self)
+
+        if lhs_type != rhs_type:
+            raise TypeMismatchError(lhs_type, rhs_type, node.lhs.context)
+
+        return BOOL
+
+    def visit_not_equal(self, node: NotEqual) -> Type:
+        return self.visit_equal(node)
 
     def visit_addition(self, node: Addition) -> Type:
         lhs_type = node.lhs.visit(self)

@@ -49,6 +49,7 @@ class TokenCategory(enum.Enum):
     PLUS = enum.auto()
     MINUS = enum.auto()
     EQUAL = enum.auto()
+    NOT_EQUAL = enum.auto()
     ASSIGN = enum.auto()
 
     # LITERALS
@@ -82,6 +83,7 @@ class TokenCategory(enum.Enum):
             TokenCategory.PLUS: "+",
             TokenCategory.MINUS: "-",
             TokenCategory.EQUAL: "==",
+            TokenCategory.NOT_EQUAL: "!=",
             TokenCategory.ASSIGN: "=",
             TokenCategory.UNSIGNEDINT: "<decimal>",
             TokenCategory.IDENTIFIER: "<identifier>",
@@ -227,6 +229,11 @@ class Scanner:
             elif remaining_source.startswith("=="):
                 self._produced_tokens.append(
                     self._consume_two_character_symbol("==", TokenCategory.EQUAL)
+                )
+
+            elif remaining_source.startswith("!="):
+                self._produced_tokens.append(
+                    self._consume_two_character_symbol("!=", TokenCategory.NOT_EQUAL)
                 )
 
             elif remaining_source.startswith("="):
