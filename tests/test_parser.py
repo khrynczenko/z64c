@@ -14,6 +14,7 @@ from tests.ast import (
     EqualTC,
     NotEqualTC,
     AdditionTC,
+    SubtractionTC,
     NegationTC,
     FunctionCallTC,
     UnsignedintTC,
@@ -345,6 +346,27 @@ def test_parsing_assignment_arithmetic_expression():
     expected_ast = make_ast_inside_main(
         AssignmentTC("x", AdditionTC(UnsignedintTC(10), IdentifierTC("y")))
     )
+    assert ast == expected_ast
+
+
+@pytest.mark.parametrize(
+    "operator, token_category",
+    [
+        (AdditionTC, TokenCategory.PLUS),
+        (SubtractionTC, TokenCategory.MINUS),
+    ],
+)
+def test_parsing_arithmetic_expression(operator, token_category):
+    tokens = make_tokens_inside_main(
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "10"),
+        make_arbitrary_token(token_category),
+        make_token_with_lexeme(TokenCategory.UNSIGNEDINT, "20"),
+        make_arbitrary_token(TokenCategory.NEWLINE),
+    )
+
+    parser = Parser(tokens)
+    ast = parser.parse()
+    expected_ast = make_ast_inside_main(operator(UnsignedintTC(10), UnsignedintTC(20)))
     assert ast == expected_ast
 
 

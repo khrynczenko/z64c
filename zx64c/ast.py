@@ -57,6 +57,10 @@ class AstVisitor(ABC, Generic[T]):
         pass
 
     @abc.abstractmethod
+    def visit_subtraction(self, node: Subtraction) -> T:
+        pass
+
+    @abc.abstractmethod
     def visit_negation(self, node: Negation) -> T:
         pass
 
@@ -307,6 +311,24 @@ class Addition(Ast):
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_addition(self)
+
+
+class Subtraction(Ast):
+    def __init__(self, lhs: Ast, rhs: Ast, context: SourceContext):
+        super().__init__(context)
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def __eq__(self, rhs: Subtraction) -> bool:
+        return (
+            isinstance(rhs, Subtraction)
+            and self.lhs == rhs.lhs
+            and self.rhs == rhs.rhs
+            and self.context == rhs.context
+        )
+
+    def visit(self, v: AstVisitor[T]) -> T:
+        return v.visit_subtraction(self)
 
 
 class Negation(Ast):

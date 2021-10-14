@@ -18,6 +18,7 @@ from zx64c.ast import (
     Equal,
     NotEqual,
     Addition,
+    Subtraction,
     Negation,
     FunctionCall,
     Unsignedint,
@@ -40,6 +41,7 @@ AssignmentTC = functools.partial(Assignment, context=TEST_CONTEXT)
 EqualTC = functools.partial(Equal, context=TEST_CONTEXT)
 NotEqualTC = functools.partial(NotEqual, context=TEST_CONTEXT)
 AdditionTC = functools.partial(Addition, context=TEST_CONTEXT)
+SubtractionTC = functools.partial(Subtraction, context=TEST_CONTEXT)
 NegationTC = functools.partial(Negation, context=TEST_CONTEXT)
 FunctionCallTC = functools.partial(FunctionCall, context=TEST_CONTEXT)
 UnsignedintTC = functools.partial(Unsignedint, context=TEST_CONTEXT)

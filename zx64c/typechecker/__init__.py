@@ -13,6 +13,7 @@ from zx64c.ast import (
     Equal,
     NotEqual,
     Addition,
+    Subtraction,
     Negation,
     FunctionCall,
     Identifier,
@@ -206,9 +207,6 @@ class TypecheckerVisitor(AstVisitor[Type]):
         self._environment.add_variable(node.name, node.var_type, node.context)
 
         variable_type = self._environment.get_variable_type(node.name, node.context)
-        if variable_type.is_numerical() and rhs_type.is_numerical():
-            return VOID
-
         if variable_type != rhs_type:
             raise TypeMismatchError(variable_type, rhs_type, node.context)
 
@@ -216,7 +214,6 @@ class TypecheckerVisitor(AstVisitor[Type]):
 
     def visit_assignment(self, node: Assignment) -> Type:
         rhs_type = node.rhs.visit(self)
-
         variable_type = self._environment.get_variable_type(node.name, node.context)
         if variable_type != rhs_type:
             raise TypeMismatchError(variable_type, rhs_type, node.context)
@@ -260,6 +257,9 @@ class TypecheckerVisitor(AstVisitor[Type]):
             raise TypeMismatchError(lhs_type, rhs_type, node.lhs.context)
 
         return lhs_type
+
+    def visit_subtraction(self, node: Subtraction) -> Type:
+        return self.visit_addition(node)
 
     def visit_negation(self, node: Negation) -> Type:
         expression_type = node.expression.visit(self)

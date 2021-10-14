@@ -66,6 +66,7 @@ from zx64c.ast import (
     Equal,
     NotEqual,
     Addition,
+    Subtraction,
     Negation,
     FunctionCall,
     Unsignedint,
@@ -285,6 +286,11 @@ class Parser:
             self._advance()
             rhs = self._parse_addition()
             return Addition(lhs, rhs, context)
+        if self._current_token.category is TokenCategory.MINUS:
+            context = self._make_context()
+            self._advance()
+            rhs = self._parse_addition()
+            return Subtraction(lhs, rhs, context)
         return lhs
 
     def _parse_term(self) -> Ast:

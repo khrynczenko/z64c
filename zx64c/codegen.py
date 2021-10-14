@@ -12,6 +12,7 @@ from zx64c.ast import (
     Equal,
     NotEqual,
     Addition,
+    Subtraction,
     Negation,
     Identifier,
     FunctionCall,
@@ -103,6 +104,9 @@ class SjasmplusSnapshotVisitor(AstVisitor[None]):
 
     def visit_addition(self, node: Addition) -> None:
         self._codegen.visit_addition(node)
+
+    def visit_subtraction(self, node: Subtraction) -> None:
+        self._codegen.visit_subtraction(node)
 
     def visit_negation(self, node: Negation) -> None:
         self._codegen.visit_negation(node)
@@ -252,6 +256,13 @@ class Z80CodegenVisitor(AstVisitor[None]):
         node.lhs.visit(self)
         print(f"{INDENTATION}ld b, a")
         node.rhs.visit(self)
+        print(f"{INDENTATION}add a, b")
+
+    def visit_subtraction(self, node: Subtraction) -> None:
+        node.lhs.visit(self)
+        print(f"{INDENTATION}ld b, a")
+        node.rhs.visit(self)
+        print(f"{INDENTATION}neg")
         print(f"{INDENTATION}add a, b")
 
     def visit_negation(self, node: Negation) -> None:
