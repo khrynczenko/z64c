@@ -4,6 +4,7 @@ import abc
 
 from typing import List, Text, TypeVar, Generic
 from abc import ABC
+from functools import singledispatchmethod
 from dataclasses import dataclass
 
 from zx64c.types import Type, Callable
@@ -121,11 +122,17 @@ class SjasmplusSnapshotProgram(Ast):
         self.program = program
         self.source_name = source_name
 
-    def __eq__(self, rhs: SjasmplusSnapshotProgram) -> bool:
-        return self.program == rhs.program and self.source_name == rhs._source_name
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_program(self)
+
+
+@SjasmplusSnapshotProgram.__eq__.register
+def __eq__(self, rhs: SjasmplusSnapshotProgram) -> bool:
+    return self.program == rhs.program and self.source_name == rhs._source_name
 
 
 class Program(Ast):
@@ -133,11 +140,17 @@ class Program(Ast):
         super().__init__(context)
         self.functions = functions
 
-    def __eq__(self, rhs: Program) -> bool:
-        return self.functions == rhs.functions and self.context == rhs.context
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_program(self)
+
+
+@Program.__eq__.register
+def _(self, rhs: Program) -> bool:
+    return self.functions == rhs.functions and self.context == rhs.context
 
 
 @dataclass
@@ -162,16 +175,22 @@ class Function(Ast):
         self.code_block = code_block
         self.type = Callable(return_type, [p.type_id for p in parameters])
 
-    def __eq__(self, rhs: Function) -> bool:
-        return (
-            self.name == rhs.name
-            and self.parameters == rhs.parameters
-            and self.return_type == rhs.return_type
-            and self.code_block == rhs.code_block
-        )
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_function(self)
+
+
+@Function.__eq__.register
+def _(self, rhs: Function) -> bool:
+    return (
+        self.name == rhs.name
+        and self.parameters == rhs.parameters
+        and self.return_type == rhs.return_type
+        and self.code_block == rhs.code_block
+    )
 
 
 class Block(Ast):
@@ -179,11 +198,17 @@ class Block(Ast):
         super().__init__(context)
         self.statements = statements
 
-    def __eq__(self, rhs: Block) -> bool:
-        return self.statements == rhs.statements
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_block(self)
+
+
+@Block.__eq__.register
+def _(self, rhs: Block) -> bool:
+    return self.statements == rhs.statements
 
 
 class If(Ast):
@@ -192,11 +217,17 @@ class If(Ast):
         self.condition = condition
         self.consequence = consequence
 
-    def __eq__(self, rhs: If) -> bool:
-        return self.condition == rhs.condition and self.consequence == rhs.consequence
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_if(self)
+
+
+@If.__eq__.register
+def _(self, rhs: If) -> bool:
+    return self.condition == rhs.condition and self.consequence == rhs.consequence
 
 
 class Print(Ast):
@@ -204,11 +235,17 @@ class Print(Ast):
         super().__init__(context)
         self.expression = expression
 
-    def __eq__(self, rhs: Print) -> bool:
-        return self.expression == rhs.expression and self.context == rhs.context
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_print(self)
+
+
+@Print.__eq__.register
+def _(self, rhs: Print) -> bool:
+    return self.expression == rhs.expression and self.context == rhs.context
 
 
 class Let(Ast):
@@ -218,16 +255,22 @@ class Let(Ast):
         self.var_type = var_type
         self.rhs = rhs
 
-    def __eq__(self, rhs: Let) -> bool:
-        return (
-            self.name == rhs.name
-            and self.var_type == rhs.var_type
-            and self.rhs == rhs.rhs
-            and self.context == rhs.context
-        )
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_let(self)
+
+
+@Let.__eq__.register
+def _(self, rhs: Let) -> bool:
+    return (
+        self.name == rhs.name
+        and self.var_type == rhs.var_type
+        and self.rhs == rhs.rhs
+        and self.context == rhs.context
+    )
 
 
 class Assignment(Ast):
@@ -236,15 +279,17 @@ class Assignment(Ast):
         self.name = name
         self.rhs = rhs
 
-    def __eq__(self, rhs: Assignment) -> bool:
-        return (
-            self.name == rhs.name
-            and self.rhs == rhs.rhs
-            and self.context == rhs.context
-        )
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_assignment(self)
+
+
+@Assignment.__eq__.register
+def _(self, rhs: Assignment) -> bool:
+    return self.name == rhs.name and self.rhs == rhs.rhs and self.context == rhs.context
 
 
 class Return(Ast):
@@ -252,11 +297,17 @@ class Return(Ast):
         super().__init__(context)
         self.expr = expr
 
-    def __eq__(self, rhs: Return) -> bool:
-        return self.expr == rhs.expr
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_return(self)
+
+
+@Return.__eq__.register
+def _(self, rhs: Return) -> bool:
+    return self.expr == rhs.expr
 
 
 class Equal(Ast):
@@ -265,16 +316,17 @@ class Equal(Ast):
         self.lhs = lhs
         self.rhs = rhs
 
-    def __eq__(self, rhs: Equal) -> bool:
-        return (
-            isinstance(rhs, Equal)
-            and self.lhs == rhs.lhs
-            and self.rhs == rhs.rhs
-            and self.context == rhs.context
-        )
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_equal(self)
+
+
+@Equal.__eq__.register
+def _(self, rhs: Equal) -> bool:
+    return self.lhs == rhs.lhs and self.rhs == rhs.rhs and self.context == rhs.context
 
 
 class NotEqual(Ast):
@@ -283,16 +335,17 @@ class NotEqual(Ast):
         self.lhs = lhs
         self.rhs = rhs
 
-    def __eq__(self, rhs: NotEqual) -> bool:
-        return (
-            isinstance(rhs, NotEqual)
-            and self.lhs == rhs.lhs
-            and self.rhs == rhs.rhs
-            and self.context == rhs.context
-        )
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_not_equal(self)
+
+
+@NotEqual.__eq__.register
+def _(self, rhs: NotEqual) -> bool:
+    return self.lhs == rhs.lhs and self.rhs == rhs.rhs and self.context == rhs.context
 
 
 class Addition(Ast):
@@ -301,16 +354,17 @@ class Addition(Ast):
         self.lhs = lhs
         self.rhs = rhs
 
-    def __eq__(self, rhs: Addition) -> bool:
-        return (
-            isinstance(rhs, Addition)
-            and self.lhs == rhs.lhs
-            and self.rhs == rhs.rhs
-            and self.context == rhs.context
-        )
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_addition(self)
+
+
+@Addition.__eq__.register
+def _(self, rhs: Addition) -> bool:
+    return self.lhs == rhs.lhs and self.rhs == rhs.rhs and self.context == rhs.context
 
 
 class Subtraction(Ast):
@@ -319,16 +373,17 @@ class Subtraction(Ast):
         self.lhs = lhs
         self.rhs = rhs
 
-    def __eq__(self, rhs: Subtraction) -> bool:
-        return (
-            isinstance(rhs, Subtraction)
-            and self.lhs == rhs.lhs
-            and self.rhs == rhs.rhs
-            and self.context == rhs.context
-        )
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_subtraction(self)
+
+
+@Subtraction.__eq__.register
+def _(self, rhs: Subtraction) -> bool:
+    return self.lhs == rhs.lhs and self.rhs == rhs.rhs and self.context == rhs.context
 
 
 class Negation(Ast):
@@ -336,11 +391,17 @@ class Negation(Ast):
         super().__init__(context)
         self.expression = expression
 
-    def __eq__(self, rhs: Negation) -> bool:
-        return self.expression == rhs.expression and self.context == rhs.context
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_negation(self)
+
+
+@Negation.__eq__.register
+def _(self, rhs: Negation) -> bool:
+    return self.expression == rhs.expression and self.context == rhs.context
 
 
 class FunctionCall(Ast):
@@ -351,15 +412,21 @@ class FunctionCall(Ast):
         self.function_name = function_name
         self.arguments = arguments
 
-    def __eq__(self, rhs: Identifier) -> bool:
-        return (
-            self.function_name == rhs.function_name
-            and self.arguments == rhs.arguments
-            and self.context == rhs.context
-        )
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_function_call(self)
+
+
+@FunctionCall.__eq__.register
+def _(self, rhs: FunctionCall) -> bool:
+    return (
+        self.function_name == rhs.function_name
+        and self.arguments == rhs.arguments
+        and self.context == rhs.context
+    )
 
 
 class Identifier(Ast):
@@ -367,15 +434,21 @@ class Identifier(Ast):
         super().__init__(context)
         self.value = value
 
-    def __eq__(self, rhs: Identifier) -> bool:
-        return (
-            isinstance(rhs, Identifier)
-            and self.value == rhs.value
-            and self.context == self.context
-        )
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_identifier(self)
+
+
+@Identifier.__eq__.register
+def _(self, rhs: Identifier) -> bool:
+    return (
+        isinstance(rhs, Identifier)
+        and self.value == rhs.value
+        and self.context == self.context
+    )
 
 
 class Unsignedint(Ast):
@@ -383,15 +456,21 @@ class Unsignedint(Ast):
         super().__init__(context)
         self.value = value
 
-    def __eq__(self, rhs: Unsignedint) -> bool:
-        return (
-            isinstance(rhs, Unsignedint)
-            and self.value == rhs.value
-            and self.context == self.context
-        )
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_unsignedint(self)
+
+
+@Unsignedint.__eq__.register
+def _(self, rhs: Unsignedint) -> bool:
+    return (
+        isinstance(rhs, Unsignedint)
+        and self.value == rhs.value
+        and self.context == self.context
+    )
 
 
 class Bool(Ast):
@@ -399,12 +478,18 @@ class Bool(Ast):
         super().__init__(context)
         self.value = value
 
-    def __eq__(self, rhs: Unsignedint) -> bool:
-        return (
-            isinstance(rhs, Bool)
-            and self.value == rhs.value
-            and self.context == self.context
-        )
+    @singledispatchmethod
+    def __eq__(self, rhs: Ast) -> bool:
+        return False
 
     def visit(self, v: AstVisitor[T]) -> T:
         return v.visit_bool(self)
+
+
+@Bool.__eq__.register
+def _(self, rhs: Bool) -> bool:
+    return (
+        isinstance(rhs, Bool)
+        and self.value == rhs.value
+        and self.context == self.context
+    )
