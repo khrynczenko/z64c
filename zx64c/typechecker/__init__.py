@@ -21,7 +21,7 @@ from zx64c.ast import (
     Bool,
 )
 from zx64c.ast import AstVisitor
-from zx64c.types import Type, Callable, Void, I8, U8, TypeIdentifier
+from zx64c.types import Type, Callable, Void, I8, U8, NumberLiteral, TypeIdentifier
 from zx64c.types import Bool as BoolT
 from zx64c.typechecker.errors import (
     TypecheckError,
@@ -38,6 +38,7 @@ from zx64c.typechecker.errors import (
 )
 
 VOID = Void()
+NUMBER_LITERAL = NumberLiteral()
 I8 = I8()
 U8 = U8()
 BOOL = BoolT()
@@ -199,7 +200,6 @@ class TypecheckerVisitor(AstVisitor[Type]):
         return VOID
 
     def visit_let(self, node: Let) -> Type:
-        rhs_type = node.rhs.visit(self)
 
         if self._environment.has_variable(node.name):
             raise AlreadyDefinedVariableError(node.name, node.context)
@@ -207,22 +207,25 @@ class TypecheckerVisitor(AstVisitor[Type]):
         self._environment.add_variable(node.name, node.var_type, node.context)
 
         variable_type = self._environment.get_variable_type(node.name, node.context)
+        rhs_type = node.rhs.visit(self).infer(variable_type)
+
         if variable_type != rhs_type:
             raise TypeMismatchError(variable_type, rhs_type, node.context)
 
         return VOID
 
     def visit_assignment(self, node: Assignment) -> Type:
-        rhs_type = node.rhs.visit(self)
         variable_type = self._environment.get_variable_type(node.name, node.context)
+        rhs_type = node.rhs.visit(self).infer(variable_type)
+
         if variable_type != rhs_type:
             raise TypeMismatchError(variable_type, rhs_type, node.context)
 
         return VOID
 
     def visit_return(self, node: Return) -> Type:
-        return_type = node.expr.visit(self)
         function_return_type = self._current_function_return_type
+        return_type = node.expr.visit(self).infer(function_return_type)
 
         if return_type != function_return_type:
             raise TypeMismatchError(function_return_type, return_type, node.context)
@@ -233,7 +236,7 @@ class TypecheckerVisitor(AstVisitor[Type]):
 
     def visit_equal(self, node: Equal) -> Type:
         lhs_type = node.lhs.visit(self)
-        rhs_type = node.rhs.visit(self)
+        rhs_type = node.rhs.visit(self).infer(lhs_type)
 
         if lhs_type != rhs_type:
             raise TypeMismatchError(lhs_type, rhs_type, node.lhs.context)
@@ -245,7 +248,7 @@ class TypecheckerVisitor(AstVisitor[Type]):
 
     def visit_addition(self, node: Addition) -> Type:
         lhs_type = node.lhs.visit(self)
-        rhs_type = node.rhs.visit(self)
+        rhs_type = node.rhs.visit(self).infer(lhs_type)
 
         if not lhs_type.is_numerical():
             raise ExpectedNumericalTypeError(lhs_type, node.lhs.context)
@@ -266,9 +269,6 @@ class TypecheckerVisitor(AstVisitor[Type]):
 
         if not expression_type.is_numerical():
             raise ExpectedNumericalTypeError(expression_type, node.context)
-
-        if expression_type == U8:
-            return I8
 
         return expression_type
 
@@ -294,7 +294,7 @@ class TypecheckerVisitor(AstVisitor[Type]):
             )
 
         for argument, parameter in zip(node.arguments, function_type.parameter_types):
-            arg_type = argument.visit(self)
+            arg_type = argument.visit(self).infer(parameter)
             if arg_type != parameter:
                 raise TypeMismatchError(parameter, arg_type, node.context)
 
@@ -304,7 +304,7 @@ class TypecheckerVisitor(AstVisitor[Type]):
         return self._environment.get_variable_type(node.value, node.context)
 
     def visit_unsignedint(self, node: Unsignedint) -> Type:
-        return U8
+        return NUMBER_LITERAL
 
     def visit_bool(self, node: Bool) -> Type:
         return BOOL

@@ -22,6 +22,7 @@ from tests.ast import (
 from zx64c.types import (
     I8,
     U8,
+    NumberLiteral,
     Bool,
     Void,
     TypeIdentifier,
@@ -51,7 +52,7 @@ def test_unsignedint_node_type():
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result == U8()
+    assert typecheck_result == NumberLiteral()
 
 
 def test_bool_node_type():
@@ -65,10 +66,10 @@ def test_bool_node_type():
 @pytest.mark.parametrize(
     "equality_ast, lhs_node, rhs_node, expected_type, got_type",
     [
-        (EqualTC, UnsignedintTC(1), BoolTC(True), U8(), Bool()),
-        (EqualTC, BoolTC(True), UnsignedintTC(1), Bool(), U8()),
-        (NotEqualTC, UnsignedintTC(1), BoolTC(True), U8(), Bool()),
-        (NotEqualTC, BoolTC(True), UnsignedintTC(1), Bool(), U8()),
+        (EqualTC, UnsignedintTC(1), BoolTC(True), NumberLiteral(), Bool()),
+        (EqualTC, BoolTC(True), UnsignedintTC(1), Bool(), NumberLiteral()),
+        (NotEqualTC, UnsignedintTC(1), BoolTC(True), NumberLiteral(), Bool()),
+        (NotEqualTC, BoolTC(True), UnsignedintTC(1), Bool(), NumberLiteral()),
     ],
 )
 def test_equality_operators_raise_on_mismatch(
@@ -90,7 +91,7 @@ def test_addition_node_type():
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result == U8()
+    assert typecheck_result == NumberLiteral()
 
 
 def test_addition_raises_on_not_numerical_types():
@@ -113,12 +114,20 @@ def test_addition_raises_on_not_numerical_types():
     ],
 )
 def test_addition_node_type_mismatch(lhs_node, rhs_node, expected_type, got_type):
-    ast = AdditionTC(lhs_node, rhs_node)
+    ast = BlockTC(
+        [
+            LetTC("x", expected_type, lhs_node),
+            LetTC("y", got_type, rhs_node),
+            AdditionTC(IdentifierTC("x"), IdentifierTC("y")),
+        ]
+    )
 
     try:
         ast.visit(TypecheckerVisitor())
-    except TypeMismatchError as e:
-        assert e == TypeMismatchError(expected_type, got_type, TEST_CONTEXT)
+    except CombinedTypecheckError as e:
+        assert e == CombinedTypecheckError(
+            [TypeMismatchError(expected_type, got_type, TEST_CONTEXT)]
+        )
         return
 
     assert False, "Expected type mismatch exception not raised"
@@ -157,14 +166,6 @@ def test_addition_node_type_mismatch_with_variable():
     assert False, "Expected type error exception not raised"
 
 
-def test_negation_node_returns_signed_type():
-    ast = NegationTC(UnsignedintTC(2))
-
-    typecheck_result = ast.visit(TypecheckerVisitor())
-
-    assert typecheck_result == I8()
-
-
 def test_identifier_node_type():
     ast = IdentifierTC("x")
     scope = Scope()
@@ -195,7 +196,7 @@ def test_negation_node():
 
     typecheck_result = ast.visit(TypecheckerVisitor())
 
-    assert typecheck_result == I8()
+    assert typecheck_result == NumberLiteral()
 
 
 def test_negation_node_raises_on_non_numerical_type():
@@ -214,6 +215,17 @@ def test_print_node_type():
     ast = PrintTC(UnsignedintTC(1))
 
     typecheck_result = ast.visit(TypecheckerVisitor())
+
+    assert typecheck_result == Void()
+
+
+@pytest.mark.parametrize("var_type", [U8(), I8()])
+def test_assignment_with_numerical_type(var_type):
+    scope = Scope()
+    scope.add_variable("x", var_type, TEST_CONTEXT)
+    ast = AssignmentTC("x", UnsignedintTC(1))
+
+    typecheck_result = ast.visit(TypecheckerVisitor(scope))
 
     assert typecheck_result == Void()
 
@@ -404,7 +416,7 @@ def test_if_node_type_mismatches_on_not_bool():
     try:
         ast.visit(TypecheckerVisitor())
     except TypeMismatchError as e:
-        assert e == TypeMismatchError(Bool(), U8(), TEST_CONTEXT)
+        assert e == TypeMismatchError(Bool(), NumberLiteral(), TEST_CONTEXT)
         return
 
     assert False, "Expected type error exception not raised"
@@ -434,7 +446,7 @@ def test_function_node_with_wrong_return_raises():
         ast.visit(TypecheckerVisitor())
     except CombinedTypecheckError as e:
         assert e == CombinedTypecheckError(
-            [TypeMismatchError(Void(), U8(), TEST_CONTEXT)]
+            [TypeMismatchError(Void(), NumberLiteral(), TEST_CONTEXT)]
         )
         return
 
@@ -454,7 +466,7 @@ def test_function_node_without_return_type_with_multiple_wrong_return_raises():
     except CombinedTypecheckError as e:
         assert e == CombinedTypecheckError(
             [
-                TypeMismatchError(Void(), U8(), TEST_CONTEXT),
+                TypeMismatchError(Void(), NumberLiteral(), TEST_CONTEXT),
                 TypeMismatchError(Void(), Bool(), TEST_CONTEXT),
             ]
         )

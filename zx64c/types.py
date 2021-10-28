@@ -17,6 +17,19 @@ class Type(ABC):
     def is_numerical() -> bool:
         return False
 
+    # We are using double dispatch here (1st dispatch)
+    def infer(self, to: Type) -> Type:
+        """
+        Usually this methods just returns `self` but for a number literal
+        this would infer what kind od number it needs to be by dispatching
+        to the method `infer_from_number_literal` and passing self to it.
+        """
+        return self
+
+    # 2nd dispatch
+    def infer_from_number_literal(self, literal: Type) -> Type:
+        return literal
+
 
 class TypeIdentifier(Type):
     def __init__(self, name: str):
@@ -58,6 +71,9 @@ class U8(Numerical):
     def __str__(self):
         return "u8"
 
+    def infer_from_number_literal(self, literal: Type) -> Type:
+        return U8()
+
 
 class I8(Numerical):
     def is_signed() -> bool:
@@ -68,6 +84,23 @@ class I8(Numerical):
 
     def __str__(self):
         return "i8"
+
+    def infer_from_number_literal(self, literal: Type) -> Type:
+        return I8()
+
+
+class NumberLiteral(Numerical):
+    def is_signed() -> bool:
+        return False
+
+    def __eq__(self, rhs: Type):
+        return isinstance(rhs, NumberLiteral)
+
+    def __str__(self):
+        return "<number literal>"
+
+    def infer(self, to: Type) -> Type:
+        return to.infer_from_number_literal(self)
 
 
 class Bool(Type):
