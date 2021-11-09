@@ -1,13 +1,8 @@
-def print3(x: i8, y: i8, z: i8) -> void:
-    print(x)
-    print(y)
-    print(z)
+def gen_n(n: i8) -> i8:
+    if n == 0:
+        return 0
+
+    return gen_n(n - 1) + 1
 
 def main() -> void:
-    let ascii_A: i8 = 65
-    let ascii_B: i8 = 66
-    let ascii_C: i8 = 67
-    print(ascii_A)
-    print(ascii_B)
-    print(ascii_C)
-    print3(ascii_A, ascii_B, ascii_C)
+    print(gen_n(2) + 55)

@@ -131,7 +131,7 @@ class Z80CodegenVisitor(AstVisitor[None]):
     @staticmethod
     def _init_function() -> None:
         """
-        Saves frme pointer of the caller onto the stack. Then stores stack
+        Saves frame pointer of the caller onto the stack. Then stores stack
         pointer to the memory so it will act as a new frame pointer.
         After this stack should look as follow:
         ------- $02
@@ -237,8 +237,8 @@ class Z80CodegenVisitor(AstVisitor[None]):
         label = make_label()
         print(f"{INDENTATION}cp b")
         print(f"{INDENTATION}ld a, $01")  # We assume it is true
-        print(f"{INDENTATION}jp z, {label}")
-        print(f"{INDENTATION}ld a, $00")  # In case operans are not equal
+        print(f"{INDENTATION}jr z, {label}")
+        print(f"{INDENTATION}ld a, $00")  # In case operands are not equal
         print(f"{label}:")
 
     def visit_not_equal(self, node: NotEqual) -> None:
@@ -275,7 +275,7 @@ class Z80CodegenVisitor(AstVisitor[None]):
             print(f"{INDENTATION}push af")
         print(f"{INDENTATION}call {node.function_name}")
         for arg_expression in node.arguments:
-            # after the call we need to deallocate that all the arguments
+            # after the call we need to deallocate all the arguments
             # that we previously pushed onto the stack
             print(f"{INDENTATION}pop bc")
 
